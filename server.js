@@ -84,7 +84,10 @@ var server = {
     });
 
     this.app.io.route('volunteer', function(req) {
-      this.AddNewPeer(req.sessionID, req.data.jobID);
+      var room = req.data.jobID;
+      this.AddNewPeer(req.sessionID, room);
+      req.io.join(room);
+      req.io.room(room).broadcast('new_peer');
       req.io.emit('added_to_job');
     }.bind(this));
 
@@ -95,7 +98,17 @@ var server = {
   },
 
   Run: function(port) {
-    this.app.listen(port);
+    this.serverHandle = this.app.listen(port);
+  },
+
+  Stop: function() {
+    this.serverHandle.close();
+    this.Reset();
+  },
+
+  Reset: function() {
+    this.peers = {};
+    this.jobs = {};
   },
 
   PeerCount: function() {
