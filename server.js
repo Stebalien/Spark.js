@@ -1,27 +1,24 @@
-/*
- * Setup:
- * 1. Install node.js
- * 2. npm install express.io
- * 
- * Run server:
- * 1. node server.js (might need sudo)
- */
-
 var express = require('express.io');
 var url = require('url');
 
 var server = {
   peers: {},
   jobs: {},
+  sockets: {},
   app: null,
 
-  AddNewPeer: function(sessionID, jobID) {
-    var peer = new Peer(sessionID, jobID);
+  AddNewPeer: function(sessionID, jobID, socket) {
+    var peer = new Peer(sessionID, jobID, socket);
     this.peers[sessionID] = peer;
     if (!(jobID in this.jobs)) {
       this.jobs[jobID] = [];
     }
     this.jobs[jobID].push(peer);
+    this.sockets[socket.id] = socket;
+  },
+
+  GetSocket: function(socketID) {
+    return this.sockets[socketID];
   },
 
   HandlePing: function(sessionID) {
@@ -64,7 +61,7 @@ var server = {
     }.bind(this));
 
     this.app.io.sockets.on('connection', function(socket) {
-      socket.emit('connected');
+      socket.emit('connected', {socketID: socket.id});
     }.bind(this));
 
     this.app.use('/static', express.static(__dirname + '/'));
@@ -84,10 +81,15 @@ var server = {
     });
 
     this.app.io.route('volunteer', function(req) {
+      if (!req.data || !req.data.jobID) {
+        return;
+      }
+
       var room = req.data.jobID;
-      this.AddNewPeer(req.sessionID, room);
+      var socketID = req.socket.id;
+      this.AddNewPeer(req.sessionID, room, req.socket);
       req.io.join(room);
-      req.io.room(room).broadcast('new_peer');
+      req.io.room(room).broadcast('new_peer', {socketID: socketID});
       req.io.emit('added_to_job');
     }.bind(this));
 
@@ -95,6 +97,30 @@ var server = {
       server.HandlePing(req.sessionID);
       req.io.emit('ping_received', req.sessionID);
     });
+
+    this.app.io.route('offer', function(req) {
+      var sockets = req.data.sockets;
+      var description = req.data.description;
+
+      var socket = this.GetSocket(sockets.answererSocketID);
+      socket.emit('offer', req.data);
+    }.bind(this));
+
+    this.app.io.route('answer', function(req) {
+      var sockets = req.data.sockets;
+      var description = req.data.description;
+
+      var socket = this.GetSocket(sockets.offererSocketID);
+      socket.emit('answer', req.data);
+    }.bind(this));
+
+    this.app.io.route('icecandidate', function(req) {
+      var sockets = req.data.sockets;
+      var candidate = req.data.candidate;
+
+      var socket = this.GetSocket(sockets.answererSocketID);
+      socket.emit('icecandidate', req.data);
+    }.bind(this));
   },
 
   Run: function(port) {
@@ -109,6 +135,7 @@ var server = {
   Reset: function() {
     this.peers = {};
     this.jobs = {};
+    this.sockets = {};
   },
 
   PeerCount: function() {
@@ -124,9 +151,10 @@ var server = {
   }
 };
 
-function Peer(sessionID, jobID) {
+function Peer(sessionID, jobID, socket) {
   this.sessionID = sessionID;
   this.jobID = jobID
+  this.socket = socket;
   this.UpdatePingTime();
 }
 
