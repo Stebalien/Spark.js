@@ -40,7 +40,7 @@ define(["blockmanager"], function(bm) {
     getOrComputePartitions: function(rdd) {
       var result = partitionCache[rdd.id];
       if (!result) {
-        result = rdd.getPartitions();
+        result = rdd.__description__.getPartitions();
         CacheManager.registerPartitions(rdd, result);
       }
       return result;
