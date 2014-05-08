@@ -82,7 +82,6 @@ var server = {
 
       var socket = this.GetSocket(sockets.answererSocketID);
       this.SendToPeer(socket, req.sessionID, 'offer', req.data);
-      //socket.emit('offer', req.data);
     }.bind(this));
 
     this.app.io.route('answer', function(req) {
@@ -91,7 +90,6 @@ var server = {
 
       var socket = this.GetSocket(sockets.offererSocketID);
       this.SendToPeer(socket, req.sessionID, 'answer', req.data);
-      //socket.emit('answer', req.data);
     }.bind(this));
 
     this.app.io.route('icecandidate', function(req) {
@@ -100,7 +98,6 @@ var server = {
 
       var socket = this.GetSocket(sockets.answererSocketID);
       this.SendToPeer(socket, req.sessionID, 'icecandidate', req.data);
-      //socket.emit('icecandidate', req.data);
     }.bind(this));
   },
 
