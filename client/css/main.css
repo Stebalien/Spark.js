@@ -1,0 +1,16 @@
+/* Auto resize */
+.repl .CodeMirror {
+  border: 1px solid #eee;
+  height: auto;
+  min-height: 2.2em;
+}
+.repl .CodeMirror-scroll {
+  overflow-y: hidden;
+  overflow-x: auto;
+}
+.repl .run-btn {
+  vertical-align: bottom;
+}
+.repl .error {
+  display: none;
+}
