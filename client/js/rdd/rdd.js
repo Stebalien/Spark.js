@@ -135,7 +135,9 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
 
   if (ctx.isMaster) {
     RDD.extend("_submit", function() {
+      /* TODO: NOPPED until we get the scheduler working (compute locally for now).
       ctx.master.submit(this.partitions);
+      */
     });
     RDD.extend("_collect", function(callback) {
       ctx.console.status("Collecting data...");
