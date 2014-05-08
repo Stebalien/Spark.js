@@ -7,7 +7,7 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
     getPartitions: function() {
       var that = this;
       var stride = Math.ceil(this.parent.partitions.length / this.ways);
-      _.flatMap(_.range(0, stride), function(offset) {
+      return _.flatten(_.map(_.range(0, stride), function(offset) {
         var deps = [];
         while (offset < this.parent.partitions.length) {
           deps.push(this.parent.partitions[offset]);
@@ -17,7 +17,7 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
         return _.map(_.range(base, base+this.ways), function(i) {
           new RDD.Partition(that, i, deps);
         });
-      });
+      }), true);
     },
     compute: function(partition, processor) {
       function next(parent) {

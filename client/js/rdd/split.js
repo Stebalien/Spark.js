@@ -7,11 +7,11 @@ define(["cachingpartition", "rdd/rdd", "underscore"], function(CachingPartition,
     },
     getPartitions: function() {
       var that = this;
-      return _.flatMap(this.parent.partitions, function(part, index) {
-        _.map(_.range(index*ways, (index+1)*ways), function(i) {
+      return _.flatten(_.map(this.parent.partitions, function(part, index) {
+        return _.map(_.range(index*that.ways, (index+1)*that.ways), function(i) {
           return new RDD.Partition(that, i, part);
         });
-      });
+      }));
     },
     compute: function(partition, processor) {
       var i = partition.index % this.ways;
