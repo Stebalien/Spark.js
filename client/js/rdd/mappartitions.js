@@ -11,8 +11,9 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
       });
     },
     compute: function(partition, processor) {
+      var that = this;
       partition.dependencies[0].collect(function(values) {
-        _.each(this.fn(values, partition.index), function(item) {
+        _.each(that.fn(values, partition.index), function(item) {
           processor.process(item);
         });
         processor.done();

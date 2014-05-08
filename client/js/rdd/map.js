@@ -11,11 +11,12 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
       });
     },
     compute: function(partition, processor) {
+      var that = this;
       partition.dependencies[0].iterate({
         process: function(item) {
-          processor.process(this.fn(item));
+          processor.process(that.fn(item));
         },
-        done: function() { processor.done() };
+        done: function() { processor.done() }
       });
     },
   });

@@ -2,7 +2,7 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
   return RDD.implement({
     init: function(parent, partitions) {
       this.parent = parent;
-      this.requestedPartitions = requestedPartitions;
+      this.requestedPartitions = partitions;
     },
     getPartitions: function() {
       var that = this;
@@ -18,7 +18,7 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
 
       var idx = 0;
       var slack = 0;
-      return _.map(_.range(0, requestedPartitions), function(i) {
+      return _.map(_.range(0, this.requestedPartitions), function(i) {
         var oldIdx = idx;
         idx += minSize;
         slack += remainder;
