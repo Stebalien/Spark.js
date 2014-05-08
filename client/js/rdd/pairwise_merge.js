@@ -10,20 +10,21 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
       var partitioned = _.partition(this.parent.partitions, function(item, index) { return this.inner != ((index % 2) == 0); });
       var zipped = _.zip.apply(_, partitioned);
       return _.map(zipped, function(pair, index) {
-        return new RDD.Partition(that, index, pair);
+        return new RDD.Partition(that, index, _.compact(pair));
       });
     },
     compute: function(partition, processor) {
+      var that = this;
       var values = [];
-      var done = _.after(2, function () {
-        _.each(fn(values[0], values[1]), function(i) {
+      var done = _.after(partition.dependencies.length, function () {
+        _.each(that.fn(values[0], values[1]), function(i) {
           processor.process(i);
         });
         processor.done();
       });
-      _.each([0, 1], function(i) {
-        partition.dependencies[i].collect(i, function(values) {
-          values[i] = values;
+      _.each(partition.dependencies, function(part, i) {
+        part.collect(function(v) {
+          values[i] = v;
           done();
         });
       });
