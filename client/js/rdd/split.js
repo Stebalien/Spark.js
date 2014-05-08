@@ -21,7 +21,7 @@ define(["cachingpartition", "rdd/rdd", "underscore"], function(CachingPartition,
       var depId = partition.dependencies[0].getId()
       var cachingPartition = this._cachingPartitions[depId];
       if (!cachingPartition) {
-        cachingPartition = this._cachingPartitions[depId] = new CachingPartition(partition, this.ways);
+        cachingPartition = this._cachingPartitions[depId] = new CachingPartition(partition.dependencies[0], this.ways);
       }
 
       cachingPartition.iterate({
