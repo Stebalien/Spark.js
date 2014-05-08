@@ -138,6 +138,7 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
       /* TODO: NOPPED until we get the scheduler working (compute locally for now).
       ctx.master.submit(this.partitions);
       */
+     return this;
     });
     RDD.extend("_collect", function(callback) {
       // Do the actual coalesce on this node (submit the parent).
