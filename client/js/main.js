@@ -3,7 +3,7 @@ require.config({
     underscore: {
       exports: '_'
     },
-    'bootstrap/affix':      { deps: ['jquery'], exports: '$.fn.affix' },
+    'bootstrap/affix':      { deps: ['jquery'], exports: '$.fn.affix' }, 
     'bootstrap/alert':      { deps: ['jquery'], exports: '$.fn.alert' },
     'bootstrap/button':     { deps: ['jquery'], exports: '$.fn.button' },
     'bootstrap/carousel':   { deps: ['jquery'], exports: '$.fn.carousel' },
@@ -24,9 +24,37 @@ require.config({
   }
 });
 
-require(["underscore", "jquery", "codemirror", "console"],
-function(_,             $,        CodeMirror,   Console) {
+require(["underscore", "jquery", "codemirror", "console", "worker"],
+function(_,             $,        CodeMirror,   Console,   Worker) {
+  function toURL(text) {
+    var blob = new Blob([text]);
+    return URL.createObjectURL(blob);
+  };
   $(document).ready(function() {
     var c = new Console($(".repl"));
+    var w = new Worker('js/spark_worker.js');
+    c.on('exec', function() {
+      c.lock();
+      var text = c.getText();
+      w.call("exec", toURL(text), function(result) {
+        c.clearError();
+
+        console.log(result);
+        switch(result.status) {
+          case "success":
+            c.displayCode(text, "javascript");
+            c.setText("");
+            break;
+          case "invalid_syntax":
+            c.setError(result.error);
+            break;
+          case "error":
+            c.displayCode(text, "javascript");
+            c.setText("");
+            c.displayError(result.error);
+        }
+        c.unlock()
+      });
+    });
   });
 });
