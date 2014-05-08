@@ -22,7 +22,7 @@ define(["context", "underscore"], function(ctx, _) {
         // TODO: remove sink data from BlockManager
     },
     isSource: function(partition) {
-      return source[partition.getId()];
+      return sources[partition.getId()];
     },
     getOrCompute: function(partition, processor) {
       var partId = partition.getId();
