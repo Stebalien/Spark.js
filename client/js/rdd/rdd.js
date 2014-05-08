@@ -133,10 +133,6 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
     return this;
   });
 
-  RDD.extend("drive", function() {
-    this.persist();
-  });
-
   if (ctx.isMaster) {
     RDD.extend("_submit", function() {
       ctx.master.submit(this.partitions);
