@@ -1,4 +1,4 @@
-define(["underscore", "util", "context"] function(_, util, ctx) {
+define(["underscore", "util", "context"], function(_, util, ctx) {
   var idCounter = 0;
 
   function setattr(obj, name, fn) {
@@ -17,7 +17,7 @@ define(["underscore", "util", "context"] function(_, util, ctx) {
     Object.defineProperty(cls.prototype, name, {
       __proto__: null,
       writable: false,
-      enumerable: false,
+      enumerable: enumerable || false,
       configurable: false,
       get: function() {
         if (!computed) {
@@ -26,7 +26,7 @@ define(["underscore", "util", "context"] function(_, util, ctx) {
         }
         return value;
       }
-    });
+    }, enumerable);
   }
 
   /* Partition */
@@ -36,7 +36,14 @@ define(["underscore", "util", "context"] function(_, util, ctx) {
       return new Partition(rdd, index, dependencies);
     }
     this.index = index;
+    if (!(rdd instanceof RDD)) {
+      // Use the real rdd if passed an rdd context.
+      rdd = rdd.__rdd__;
+    }
     this.rdd = rdd;
+    if (!_.isArray(dependencies)) {
+      dependencies = [dependencies];
+    }
     this.dependencies = Object.freeze(dependencies || []);
     Object.freeze(this);
   }
@@ -52,7 +59,7 @@ define(["underscore", "util", "context"] function(_, util, ctx) {
 
   Partition.prototype.collect = function(cb) {
     var values = [];
-    this.iterate(this, {
+    this.iterate({
       process: function(item) {
         values.push(item);
       },
@@ -69,15 +76,11 @@ define(["underscore", "util", "context"] function(_, util, ctx) {
   }
 
   setattr(RDD, "extend", function(name, fn) {
-    setattr(RDD.prototype, name, fn);
-  });
-
-  setattr(RDD, "extend", function(name, fn) {
-    setattr(RDD.prototype, name, fn);
+    setattr(RDD.prototype, name, fn, true);
   });
 
   setattr(RDD, "extendStatic", function(name, fn) {
-    setattr(RDD, name, fn);
+    setattr(RDD, name, fn, true);
   });
 
   RDD.extendStatic("Partition", Partition);
@@ -99,6 +102,7 @@ define(["underscore", "util", "context"] function(_, util, ctx) {
       this.id = idCounter++; // Predictable, unique ID.
       ctx.cm.registerRDD(this);
       this.__description__ = new RDDContext(arguments);
+      this.__description__.__rdd__ = this;
       //Object.freeze(this);
     };
 
@@ -112,15 +116,15 @@ define(["underscore", "util", "context"] function(_, util, ctx) {
     if (partition.rdd.id !== this.id) {
       throw new Error("Cannot compute another RDD's partition");
     }
-    if (ctx.gm.isSource(partition.getId())) {
+    if (ctx.gm.isSource(partition)) {
       // Someone elses problem (probably!).
       ctx.gm.getOrCompute(partition, processor);
-    } else if (rdd.persistLevel > 0) {
+    } else if (this.persistLevel > 0) {
       // Try to get it from the cache.
       ctx.cm.getOrCompute(partition, processor);
     } else {
       // Just compute it.
-      rdd.compute(partition, processor);
+      this.__description__.compute(partition, processor);
     }
   });
 
@@ -154,9 +158,7 @@ define(["underscore", "util", "context"] function(_, util, ctx) {
 
   Object.defineProperty(RDD.prototype, "partitions", {
     __proto__: null,
-    writable: false,
     enumerable: true,
-    configurable: false,
     get: function() {
       return ctx.cm.getOrComputePartitions(this);
     }
