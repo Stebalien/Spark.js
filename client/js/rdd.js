@@ -1,5 +1,18 @@
-define( ["rdd/rdd", "util", "underscore", "rdd/coalesce", "rdd/mixed", "rdd/pairwise_merge", "rdd/map" , "rdd/mappartitions", "rdd/flatmap", "rdd/filter", "rdd/multiget"],
-function( RDD ,      util,   _          ,  CoalescedRDD,   MixedRDD  ,  PairwiseMergeRDD   ,  MappedRDD,  MappedPartitionRDD,  FlatMapRDD  ,  FilterRDD  ,  MultigetRDD  ) {
+define([
+  "rdd/rdd",
+  "util",
+  "underscore",
+  "rdd/coalesce",
+  "rdd/mixed",
+  "rdd/pairwise_merge",
+  "rdd/map" ,
+  "rdd/mappartitions",
+  "rdd/flatmap",
+  "rdd/filter",
+  "rdd/multiget",
+  "rdd/split"
+],
+function(RDD, util, _, CoalescedRDD, MixedRDD, PairwiseMergeRDD, MappedRDD, MappedPartitionRDD, FlatMapRDD, FilterRDD, MultigetRDD, SplitRDD) {
 
   RDD.extend("mix", function(ways) {
     return new MixedRDD(this, ways);
@@ -14,7 +27,7 @@ function( RDD ,      util,   _          ,  CoalescedRDD,   MixedRDD  ,  Pairwise
     while (true) {
       // Map
       that = new MappedPartitionRDD(that, function(values) {
-        return _.reduce(values, fn, zero);
+        return [_.reduce(values, fn, zero)];
       });
       // Check if done...
       if (that.partitions.length == 1) {
@@ -35,22 +48,23 @@ function( RDD ,      util,   _          ,  CoalescedRDD,   MixedRDD  ,  Pairwise
   });
 
   RDD.extend("mapPartitions", function(fn) {
-    return new MappedPartitionRDD(that, fn);
+    return new MappedPartitionRDD(this, fn);
   });
 
   // Theta((n/p)log(n/p) + n) - high p -> Theta(n), low p -> Theta(n*log(n))
   // TODO: reduce communication.
   RDD.extend("sort", function(fn) {
+    var that = this;
     // Sort initial partitions.
     var that = that.mapPartitions(function(values) {
-      _.sort(values, fn)
+      return _.sortBy(values, fn)
     });
     // Bucket-mergesort the rest.
     // n rounds for n partitions. You should probably coalesce before doing this of your partitions are small.
-    var nparts = that.partitions;
-    _.forEach(_.range(0, nparts), function(i) {
+    var nparts = that.partitions.length;
+    _.each(_.range(0, nparts), function(i) {
       that = new PairwiseMergeRDD(that, (i % 2) == 0, function(a, b) {
-        if (a.length == 0 || b.length == 0) {
+        if (a.length == 0 || !b || b.length == 0) {
           return a.concat(b);
         }
         var i, j = 0;
@@ -68,6 +82,10 @@ function( RDD ,      util,   _          ,  CoalescedRDD,   MixedRDD  ,  Pairwise
       }).split(2);
     });
     return that;
+  });
+
+  RDD.extend("split", function(n) {
+    return new SplitRDD(this, n);
   });
 
   RDD.extend("flatMap", function(fn) {
@@ -92,13 +110,14 @@ function( RDD ,      util,   _          ,  CoalescedRDD,   MixedRDD  ,  Pairwise
 
   RDD.extend("count", function() {
     return (new MappedPartitionRDD(this, function(values) {
-      values.length;
+      return [values.length];
     })).sum();
   });
 
   RDD.extend("print", function() {
     this._collect(function(values) {
-      ctx.console.log(values);
+      console.log(values);
+      //ctx.console.log(values);
     });
   });
 
@@ -106,7 +125,7 @@ function( RDD ,      util,   _          ,  CoalescedRDD,   MixedRDD  ,  Pairwise
     var that = this;
     this._collect(function(values) {
       var blob = new Blob(JSON.stringify(values), {type: "text/json"});
-      saveAs(blob, "rdd-" = that.id ".json");
+      saveAs(blob, "rdd-" + "-" + that.id + ".json");
     });
   });
 
