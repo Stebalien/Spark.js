@@ -13,18 +13,15 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
       }));
     },
     compute: function(taskContext, partition, processor) {
-      var i = partition.index % this.ways;
       var that = this;
-      partition.dependencies[0].iterate(taskContext, {
-        process: function(item) {
-          if ((i % that.ways) == 0) {
-            processor.process(item);
-          }
-          i++;
-        },
-        done: function() {
-          processor.done();
-        }
+      partition.dependencies[0].collect(taskContext, function(values) {
+        var width = values.length/that.ways;
+        var start = Math.floor(partition.index*width);
+        var end = Math.floor((partition.index+1)*width);
+        _.each(values.slice(start, end), function(item) {
+          processor.process(item);
+        });
+        processor.done();
       });
     },
   });
