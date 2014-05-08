@@ -140,11 +140,9 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
       */
     });
     RDD.extend("_collect", function(callback) {
-      ctx.console.status("Collecting data...");
       // Do the actual coalesce on this node (submit the parent).
       // XXX: Cyclic dependency. Not a real problem but still grrr...
       this._submit().coalesce(1).partitions[0].collect(function(values) {
-        ctx.console.clearStatus();
         callback(values);
       });
     });
