@@ -37,31 +37,9 @@ var server = {
       next();
     });
 
-    var auth = this.app.io.get('authorization');
-    this.app.io.set('authorization', function(data, next) {
-      if (data.query.test) {
-        var parsedURL = url.parse(data.url, true);
-        delete parsedURL.query['test'];
-        delete parsedURL.search;
-        data.url = url.format(parsedURL);
-        data.query.test = false;
-
-        var req = {
-          sessionStore: store
-        };
-        store.generate(req);
-        store.set(req.sessionID, req.session);
-        data.cookies = {
-          'connect.sid': req.sessionID
-        };
-        data.sessionID = req.sessionID;
-      }
-
-      auth(data, next);
-    }.bind(this));
-
     this.app.io.sockets.on('connection', function(socket) {
-      socket.emit('connected', {socketID: socket.id});
+      this.sockets[socket.id] = socket;
+      this.SendReliable(socket, {type: 'connected', socketID: socket.id});
     }.bind(this));
 
     this.app.use('/static', express.static(__dirname + '/'));
@@ -85,25 +63,26 @@ var server = {
         return;
       }
 
-      var room = req.data.jobID;
+      var roomID = req.data.jobID;
       var socketID = req.socket.id;
-      this.AddNewPeer(req.sessionID, room, req.socket);
-      req.io.join(room);
-      req.io.room(room).broadcast('new_peer', {socketID: socketID});
-      req.io.emit('added_to_job');
+      this.AddNewPeer(req.sessionID, roomID, req.socket);
+      req.io.join(roomID);
+      this.Broadcast(req.io.room(roomID), 'new_peer', {socketID: socketID});
+      this.SendToPeer(req.socket, req.sessionID, 'added_to_job', {jobID: roomID});
     }.bind(this));
 
     this.app.io.route('ping', function(req) {
       server.HandlePing(req.sessionID);
-      req.io.emit('ping_received', req.sessionID);
-    });
+      this.SendToPeer(req.socket, req.sessionID, 'ping');
+    }.bind(this));
 
     this.app.io.route('offer', function(req) {
       var sockets = req.data.sockets;
       var description = req.data.description;
 
       var socket = this.GetSocket(sockets.answererSocketID);
-      socket.emit('offer', req.data);
+      this.SendToPeer(socket, req.sessionID, 'offer', req.data);
+      //socket.emit('offer', req.data);
     }.bind(this));
 
     this.app.io.route('answer', function(req) {
@@ -111,7 +90,8 @@ var server = {
       var description = req.data.description;
 
       var socket = this.GetSocket(sockets.offererSocketID);
-      socket.emit('answer', req.data);
+      this.SendToPeer(socket, req.sessionID, 'answer', req.data);
+      //socket.emit('answer', req.data);
     }.bind(this));
 
     this.app.io.route('icecandidate', function(req) {
@@ -119,16 +99,59 @@ var server = {
       var candidate = req.data.candidate;
 
       var socket = this.GetSocket(sockets.answererSocketID);
-      socket.emit('icecandidate', req.data);
+      this.SendToPeer(socket, req.sessionID, 'icecandidate', req.data);
+      //socket.emit('icecandidate', req.data);
     }.bind(this));
   },
 
-  Run: function(port) {
-    this.serverHandle = this.app.listen(port);
+  Broadcast: function(room, type, data) {
+    var message = {
+      from: 'server',
+      type: type
+    };
+
+    for (var key in data) {
+      if (!(key in message)) {
+        message[key] = data[key];
+      }
+    }
+
+    room.broadcast('message', message);
   },
 
-  Stop: function() {
-    this.serverHandle.close();
+  SendToPeer: function(socket, sessionID, type, data) {
+    var message = {
+      from: 'server',
+      sessionID: sessionID,
+      socketID: socket.id,
+      type: type
+    };
+
+    for (var key in data) {
+      if (!(key in message)) {
+        message[key] = data[key];
+      }
+    }
+
+    socket.emit('message', message);
+  },
+
+  SendReliable: function(socket, data) {
+    var timeout = setTimeout(function() {
+      this.SendReliable(socket, data);
+    }.bind(this), 2000);
+    var type = data.type == 'connected' ? 'connected' : 'message';
+    socket.emit(type, data, function(response) {
+      clearTimeout(timeout);
+    });
+  },
+
+  Run: function(port, callback) {
+    this.serverHandle = this.app.listen(port, callback);
+  },
+
+  Stop: function(callback) {
+    this.serverHandle.close(callback);
     this.Reset();
   },
 
