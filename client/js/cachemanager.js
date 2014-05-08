@@ -46,4 +46,5 @@ define(["blockmanager"], function(bm) {
       return result;
     }
   };
+  return CacheManager;
 });
