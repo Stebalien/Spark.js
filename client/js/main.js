@@ -24,22 +24,20 @@ require.config({
   }
 });
 
-require(["underscore", "jquery", "codemirror", "console", "worker"],
-function(_,             $,        CodeMirror,   Console,   Worker) {
+require(["underscore", "jquery", "console", "worker"],
+function(_,             $      ,  Console,   Worker) {
   function toURL(text) {
     var blob = new Blob([text]);
     return URL.createObjectURL(blob);
   };
   $(document).ready(function() {
     var c = new Console($(".repl"));
-    var w = new Worker('js/spark_worker.js');
+    var w = new Worker('js/spark_worker.js#master');
     c.on('exec', function() {
       c.lock();
       var text = c.getText();
       w.call("exec", toURL(text), function(result) {
         c.clearError();
-
-        console.log(result);
         switch(result.status) {
           case "success":
             c.displayCode(text, "javascript");

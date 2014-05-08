@@ -5,6 +5,6 @@ function( Manager ,  GoalManager,   CacheManager ,  BlockManager ) {
     gm: GoalManager,
     cm: CacheManager,
     bm: BlockManager,
-    isMaster: self.isMaster // TODO!
+    isMaster: location.hash === "#master"
   };
 });
