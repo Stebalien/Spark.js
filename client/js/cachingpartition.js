@@ -1,62 +1,60 @@
 define(["rdd/rdd", "underscore"], function(RDD, _) {
   function CachingPartition(parent, times) {
-    if (!(this instanceof Partition)) {
+    if (!(this instanceof RDD.Partition)) {
       return new CachingPartition(parent);
     }
     this.parent = parent;
     this._cache = null;
     this._processors = null;
+    this.times = times;
   }
 
-  CachingPartition.prototype = RDD.Partition.prototype;
+  CachingPartition.prototype = Object.create(RDD.Partition.prototype);
   CachingPartition.prototype.constructor = CachingPartition;
 
   Object.defineProperty(CachingPartition.prototype, "index", {
     __proto__: null,
-    get: function() { this.parent.index; },
-    set: function(value) { this.parent.index = value; }
+    get: function() { return this.parent.index; },
+    set: function(value) { return this.parent.index = value; }
   });
 
   Object.defineProperty(CachingPartition.prototype, "rdd", {
     __proto__: null,
-    get: function() { this.parent.rdd; },
-    set: function(value) { this.parent.rdd = value; }
-  });
-
-  Object.defineProperty(CachingPartition.prototype, "rdd", {
-    __proto__: null,
-    get: function() { this.parent.rdd; },
-    set: function(value) { this.parent.rdd = value; }
+    get: function() { return this.parent.rdd; },
+    set: function(value) { return this.parent.rdd = value; }
   });
 
   Object.defineProperty(CachingPartition.prototype, "dependencies", {
     __proto__: null,
-    get: function() { this.parent.dependencies; },
-    set: function(value) { this.parent.dependencies = value; }
+    get: function() { return this.parent.dependencies; },
+    set: function(value) { return this.parent.dependencies = value; }
   });
 
   CachingPartition.prototype.iterate = function(processor) {
     var that = this;
+    // TODO: Not quite working with sort!
 
     // We're first!
     if (!that._cache) {
       that._cache = [];
       that._processors = [processor];
-      that.rdd.iterate(that, {
-        processor: function(item) {
+      var idx = 0;
+      that.parent.iterate({
+        process: function(item) {
           var i;
           for (i = 0; i < that._processors.length; i++) {
-            proc.process(item);
+            that._processors[i].process(item);
           }
           // cache it.
-          if (i < this.times) {
-            that._cache[i] = {value: item, times: that.times - i};
+          if (i < that.times) {
+            that._cache[idx] = {value: item, times: that.times - i};
           }
+          idx++;
         },
         done: function() {
           var procs = that._processors;
           that._processors = null;
-          _.each(that._processors, function(proc) {
+          _.each(procs, function(proc) {
             proc.done();
             that.times--;
           });
@@ -73,11 +71,11 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
         // Currently processing.
         that._processors.push(processor);
       } else {
-        processor.done();
         that.times--;
         if (that.times == 0) {
           that._cache = null;
         }
+        processor.done();
       }
     }
   };
