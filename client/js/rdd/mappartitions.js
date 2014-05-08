@@ -10,9 +10,9 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
         return new RDD.Partition(that, index, parent);
       });
     },
-    compute: function(partition, processor) {
+    compute: function(taskContext, partition, processor) {
       var that = this;
-      partition.dependencies[0].collect(function(values) {
+      partition.dependencies[0].collect(taskContext, function(values) {
         _.each(that.fn(values, partition.index), function(item) {
           processor.process(item);
         });

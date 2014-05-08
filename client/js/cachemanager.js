@@ -12,12 +12,12 @@ define(["blockmanager"], function(bm) {
     registerPartitions: function(rdd, partitions) {
       partitionCache[rdd.id] = partitions;
     },
-    getOrCompute: function(partition, processor) {
+    getOrCompute: function(taskContext, partition, processor) {
       var partId = partition.getId()
       bm.get(partId, function(values) {
         if (!values) {
           values = [];
-          partition.iterator({
+          partition.rdd.compute(taskContext, partition, {
             process: function(item) {
               values.push(item);
             },

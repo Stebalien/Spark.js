@@ -24,7 +24,7 @@ define(["context", "underscore"], function(ctx, _) {
     isSource: function(partition) {
       return sources[partition.getId()];
     },
-    getOrCompute: function(partition, processor) {
+    getOrCompute: function(taskContext, partition, processor) {
       var partId = partition.getId();
       var waitingList = waiting[partId];
       var cancel = false;
@@ -36,9 +36,9 @@ define(["context", "underscore"], function(ctx, _) {
         // I shouln't find it but I might need to cache it!
         if (rdd.persistLevel > 0) {
           // Try to get it from the cache.
-          ctx.cm.getOrCompute(partition, processor);
+          ctx.cm.getOrCompute(taskContext, partition, processor);
         } else {
-          partition.compute(processor);
+          partition.rdd.compute(taskContext, partition, processor);
         }
       });
       ctx.bm.get(partId, function(values) {

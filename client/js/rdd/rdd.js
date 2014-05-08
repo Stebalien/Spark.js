@@ -49,17 +49,17 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
   }
 
 
-  Partition.prototype.iterate = function(processor) {
-    this.rdd.iterate(this, processor);
+  Partition.prototype.iterate = function(taskContext, processor) {
+    return this.rdd.iterate(taskContext, this, processor);
   };
 
   Partition.prototype.getId = function() {
-    this.rdd.id + "/" + this.index;
+    return this.rdd.id + "/" + this.index;
   };
 
-  Partition.prototype.collect = function(cb) {
+  Partition.prototype.collect = function(taskContext, cb) {
     var values = [];
-    this.iterate({
+    return this.iterate(taskContext, {
       process: function(item) {
         values.push(item);
       },
@@ -76,11 +76,11 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
   }
 
   setattr(RDD, "extend", function(name, fn) {
-    setattr(RDD.prototype, name, fn, true);
+    return setattr(RDD.prototype, name, fn, true);
   });
 
   setattr(RDD, "extendStatic", function(name, fn) {
-    setattr(RDD, name, fn, true);
+    return setattr(RDD, name, fn, true);
   });
 
   RDD.extendStatic("Partition", Partition);
@@ -103,7 +103,8 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
       ctx.cm.registerRDD(this);
       this.__description__ = new RDDContext(arguments);
       this.__description__.__rdd__ = this;
-      //Object.freeze(this);
+      // Immutable (to make it deterministic and to avoid interference).
+      util.deepFreeze(this);
     };
 
     RDDImpl.prototype = Object.create(RDD.prototype);
@@ -112,19 +113,50 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
     return RDDImpl;
   });
 
-  RDD.extend("iterate", function(partition, processor) {
+  function splatProcess(processors) {
+    return {
+        process: function(item) {
+          var i;
+          for (i = 0; i < processors.length; i++) {
+            processors[i].process(item);
+          }
+        },
+        done: function() {
+          while (processors.length > 0) {
+            // cleanup references.
+            processors.shift().done();
+          }
+        }
+    };
+  };
+
+  RDD.extend("iterate", function(taskContext, partition, processor) {
     if (partition.rdd.id !== this.id) {
       throw new Error("Cannot compute another RDD's partition");
     }
-    if (ctx.gm.isSource(partition)) {
-      // Someone elses problem (probably!).
-      ctx.gm.getOrCompute(partition, processor);
-    } else if (this.persistLevel > 0) {
-      // Try to get it from the cache.
-      ctx.cm.getOrCompute(partition, processor);
+
+    if (!taskContext.processorsFor) {
+      taskContext.processorsFor = {};
+    }
+
+    var partId = partition.getId();
+    var processors = taskContext.processorsFor[partId];
+
+    if (!taskContext.processorsFor[partId]) {
+      processors = taskContext.processorsFor[partId] = [processor];
+      var intermediate = splatProcess(processors);
+      if (ctx.gm.isSource(partition)) {
+        // Someone elses problem (probably!).
+        ctx.gm.getOrCompute(taskContext, partition, intermediate);
+      } else if (this.persistLevel > 0) {
+        // Try to get it from the cache.
+        ctx.cm.getOrCompute(taskContext, partition, intermediate);
+      } else {
+        // Just compute it.
+        this.__description__.compute(taskContext, partition, intermediate);
+      }
     } else {
-      // Just compute it.
-      this.__description__.compute(partition, processor);
+      processors.push(processor);
     }
   });
 
@@ -143,7 +175,7 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
     RDD.extend("_collect", function(callback) {
       // Do the actual coalesce on this node (submit the parent).
       // XXX: Cyclic dependency. Not a real problem but still grrr...
-      this._submit().coalesce(1).partitions[0].collect(function(values) {
+      this._submit().coalesce(1).partitions[0].collect({}, function(values) {
         callback(values);
       });
     });

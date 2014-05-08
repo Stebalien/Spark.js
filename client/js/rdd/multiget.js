@@ -9,7 +9,7 @@ define(["manager", "rdd/rdd", "underscore"], function(Manager, RDD, _) {
         return new RDD.Partition(that, index, []);
       });
     },
-    compute: function(partition, processor) {
+    compute: function(taskContext, partition, processor) {
       var that = this;
       var req = new XMLHttpRequest();
       req.onreadystatechange = function() {

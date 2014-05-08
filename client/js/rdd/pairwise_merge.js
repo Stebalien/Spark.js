@@ -13,7 +13,7 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
         return new RDD.Partition(that, index, _.compact(pair));
       });
     },
-    compute: function(partition, processor) {
+    compute: function(taskContext, partition, processor) {
       var that = this;
       var values = [];
       var done = _.after(partition.dependencies.length, function () {
@@ -23,7 +23,7 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
         processor.done();
       });
       _.each(partition.dependencies, function(part, i) {
-        part.collect(function(v) {
+        part.collect(taskContext, function(v) {
           values[i] = v;
           done();
         });

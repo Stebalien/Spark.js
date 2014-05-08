@@ -30,22 +30,62 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
         return new RDD.Partition(that, i, parentPartitions.slice(oldIdx, idx));
       });
     },
-    compute: function(partition, processor) {
-      function next(i) {
-        if (i == partition.dependencies.length) {
-          processor.done();
-        } else {
-          partition.dependencies[i].iterate({
-            process: function(item) {
+    compute: function(taskContext, partition, processor) {
+      // Launch sub partitions in parallel but return results in-order.
+      // Where possible, avoid caching intermediates.
+      var victim = 0;
+      var cache = [];
+      _.each(partition.dependencies, function(part, i) {
+        var lcache = null;
+        part.iterate(taskContext, {
+          process: function(item) {
+            if (victim === i) {
+              if (lcache && lcache.length > 0) {
+                _.each(lcache, function(item) {
+                  processor.process(item);
+                });
+                lcache = null;
+              }
               processor.process(item);
-            },
-            done: function() {
-              next(i+1);
+            } else {
+              if (!lcache) {
+                lcache = [];
+              }
+              lcache.push(item);
             }
-          });
-        }
-      }
-      next(0);
+          },
+          done: function() {
+            if (victim === i) {
+              // I'm the victim.
+
+              // Empty my cache first if it has any items.
+              if (lcache && lcache.length) {
+                _.each(lcache, function(item) {
+                  processor.process(item)
+                });
+                lcache = null;
+              }
+              // Empty other caches (but maintian control of the victim pointer).
+              var localVictim = victim;
+              while (cache[++localVictim]) {
+                _.each(cache[localVictim], function(item) {
+                  processor.process(item)
+                });
+                cache[localVictim] = null;
+              }
+              // now we can give up control.
+              victim = localVictim;
+              if (victim === partition.dependencies.length) {
+                // All done.
+                processor.done();
+              }
+            } else {
+              // Not the victim. Store my cache.
+              cache[i] = lcache || [];
+            }
+          }
+        });
+      });
     }
   });
 });
