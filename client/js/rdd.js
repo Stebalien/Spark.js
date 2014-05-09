@@ -4,7 +4,6 @@ define([
   "underscore",
   "rdd/coalesce",
   "rdd/mixed",
-  "rdd/pairwise_merge",
   "rdd/map" ,
   "rdd/mappartitions",
   "rdd/flatmap",
@@ -12,7 +11,7 @@ define([
   "rdd/multiget",
   "rdd/split"
 ],
-function(RDD, util, _, CoalescedRDD, MixedRDD, PairwiseMergeRDD, MappedRDD, MappedPartitionRDD, FlatMapRDD, FilterRDD, MultigetRDD, SplitRDD) {
+function(RDD, util, _, CoalescedRDD, MixedRDD, MappedRDD, MappedPartitionRDD, FlatMapRDD, FilterRDD, MultigetRDD, SplitRDD) {
 
   RDD.extend("mix", function(ways) {
     return new MixedRDD(this, ways);
@@ -49,39 +48,6 @@ function(RDD, util, _, CoalescedRDD, MixedRDD, PairwiseMergeRDD, MappedRDD, Mapp
 
   RDD.extend("mapPartitions", function(fn) {
     return new MappedPartitionRDD(this, fn);
-  });
-
-  // Theta((n/p)log(n/p) + n) - high p -> Theta(n), low p -> Theta(n*log(n))
-  // TODO: reduce communication.
-  RDD.extend("sort", function(fn) {
-    var that = this;
-    // Sort initial partitions.
-    var that = that.mapPartitions(function(values) {
-      return _.sortBy(values, fn)
-    });
-    // Bucket-mergesort the rest.
-    // n rounds for n partitions. You should probably coalesce before doing this of your partitions are small.
-    var nparts = that.partitions.length;
-    _.each(_.range(0, nparts), function(i) {
-      that = new PairwiseMergeRDD(that, (i % 2) == 0, function(a, b) {
-        if (a.length == 0 || !b || b.length == 0) {
-          return a.concat(b);
-        }
-        var i, j = 0;
-        var result = [];
-        while (true) {
-          if (a[i] <= b[j]) {
-            result.push(a[i]);
-            i++;
-          } else {
-            result.push(b[j]);
-            j++;
-          }
-        }
-        return result;
-      }).split(2);
-    });
-    return that;
   });
 
   RDD.extend("split", function(n) {
