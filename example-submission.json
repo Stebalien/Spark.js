@@ -1,0 +1,234 @@
+{
+  "seq": 0,
+  "code": "RDD.http(\"http://localhost:8080\").lines().split(10).map(function(line) { return line.length; }).sum().print()",
+  "targets": [
+    "6/0"
+  ],
+  "rdds": [
+    [
+      {
+        "id": "0/0",
+        "dependencies": []
+      }
+    ],
+    [
+      {
+        "id": "1/0",
+        "dependencies": [
+          "0/0"
+        ]
+      }
+    ],
+    [
+      {
+        "id": "2/0",
+        "dependencies": [
+          "1/0"
+        ]
+      },
+      {
+        "id": "2/1",
+        "dependencies": [
+          "1/0"
+        ]
+      },
+      {
+        "id": "2/2",
+        "dependencies": [
+          "1/0"
+        ]
+      },
+      {
+        "id": "2/3",
+        "dependencies": [
+          "1/0"
+        ]
+      },
+      {
+        "id": "2/4",
+        "dependencies": [
+          "1/0"
+        ]
+      },
+      {
+        "id": "2/5",
+        "dependencies": [
+          "1/0"
+        ]
+      },
+      {
+        "id": "2/6",
+        "dependencies": [
+          "1/0"
+        ]
+      },
+      {
+        "id": "2/7",
+        "dependencies": [
+          "1/0"
+        ]
+      },
+      {
+        "id": "2/8",
+        "dependencies": [
+          "1/0"
+        ]
+      },
+      {
+        "id": "2/9",
+        "dependencies": [
+          "1/0"
+        ]
+      }
+    ],
+    [
+      {
+        "id": "3/0",
+        "dependencies": [
+          "2/0"
+        ]
+      },
+      {
+        "id": "3/1",
+        "dependencies": [
+          "2/1"
+        ]
+      },
+      {
+        "id": "3/2",
+        "dependencies": [
+          "2/2"
+        ]
+      },
+      {
+        "id": "3/3",
+        "dependencies": [
+          "2/3"
+        ]
+      },
+      {
+        "id": "3/4",
+        "dependencies": [
+          "2/4"
+        ]
+      },
+      {
+        "id": "3/5",
+        "dependencies": [
+          "2/5"
+        ]
+      },
+      {
+        "id": "3/6",
+        "dependencies": [
+          "2/6"
+        ]
+      },
+      {
+        "id": "3/7",
+        "dependencies": [
+          "2/7"
+        ]
+      },
+      {
+        "id": "3/8",
+        "dependencies": [
+          "2/8"
+        ]
+      },
+      {
+        "id": "3/9",
+        "dependencies": [
+          "2/9"
+        ]
+      }
+    ],
+    [
+      {
+        "id": "4/0",
+        "dependencies": [
+          "3/0"
+        ]
+      },
+      {
+        "id": "4/1",
+        "dependencies": [
+          "3/1"
+        ]
+      },
+      {
+        "id": "4/2",
+        "dependencies": [
+          "3/2"
+        ]
+      },
+      {
+        "id": "4/3",
+        "dependencies": [
+          "3/3"
+        ]
+      },
+      {
+        "id": "4/4",
+        "dependencies": [
+          "3/4"
+        ]
+      },
+      {
+        "id": "4/5",
+        "dependencies": [
+          "3/5"
+        ]
+      },
+      {
+        "id": "4/6",
+        "dependencies": [
+          "3/6"
+        ]
+      },
+      {
+        "id": "4/7",
+        "dependencies": [
+          "3/7"
+        ]
+      },
+      {
+        "id": "4/8",
+        "dependencies": [
+          "3/8"
+        ]
+      },
+      {
+        "id": "4/9",
+        "dependencies": [
+          "3/9"
+        ]
+      }
+    ],
+    [
+      {
+        "id": "5/0",
+        "dependencies": [
+          "4/0",
+          "4/1",
+          "4/2",
+          "4/3",
+          "4/4",
+          "4/5",
+          "4/6",
+          "4/7",
+          "4/8",
+          "4/9"
+        ]
+      }
+    ],
+    [
+      {
+        "id": "6/0",
+        "dependencies": [
+          "5/0"
+        ]
+      }
+    ]
+  ]
+}
