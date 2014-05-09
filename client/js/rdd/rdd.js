@@ -92,6 +92,8 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
 
     RDDContext.prototype = description;
     RDDContext.prototype.constructor = RDDContext;
+    Object.freeze(RDDContext);
+    Object.freeze(RDDContext.prototype);
 
     function RDDImpl() {
       if (!(this instanceof RDD)) {
@@ -109,6 +111,8 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
 
     RDDImpl.prototype = Object.create(RDD.prototype);
     RDDImpl.constructor = RDDImpl;
+    Object.freeze(RDDImpl);
+    Object.freeze(RDDImpl.prototype);
 
     return RDDImpl;
   });
