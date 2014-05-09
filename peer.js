@@ -15,11 +15,12 @@ var rtcConfig = {
 
 var serverURL = 'http://localhost:5000';
 
-function Peer(socket) {
-  socket && this.SetSocket(socket);
+function Peer() {
+  this.socket = null;
   this.connections = {};
-  this.eventHandlers = [];
+  this.eventHandlers = {};
   this.socketID = null;
+  this.ConnectToServer(serverURL);
 }
 
 Peer.prototype = {
@@ -41,9 +42,11 @@ Peer.prototype = {
     return connection;
   },
 
-  ConnectToServer: function(serverURL) {
+  ConnectToServer: function() {
     if (!this.socket) {
-      this.SetSocket(io.connect(serverURL));
+      this.SetSocket(io.connect(serverURL, {force_new_connection: true}));
+    } else {
+      this.socket.socket.reconnect();
     }
   },
 
@@ -52,15 +55,11 @@ Peer.prototype = {
     this.socket.on('connected', this.Init.bind(this));
   },
 
-  OnConnect: function(data) {
-    this.socket.on('connected', this.Init.bind(this));
-    this.afterInitConnectedCallback && this.afterInitConnectedCallback();
-  },
-
   Init: function(data, ack) {
     // Notify server that message has been received
     ack();
 
+    this.Ping();
     if (this.init) {
       return;
     }
@@ -74,8 +73,6 @@ Peer.prototype = {
     }
 
     this.socket.on('message', this.OnMessage.bind(this));
-
-    this.Ping();
   },
 
   OnMessage: function(message) {
@@ -95,25 +92,38 @@ Peer.prototype = {
   },
 
   Ping: function() {
-    setTimeout(this.Ping.bind(this), PING_INTERVAL);
+    this.PingTimeout = setTimeout(this.Ping.bind(this), PING_INTERVAL);
     this.socket.emit('ping');
   },
 
-  Emit: function(event, data) {
-    data.type = event;
+  On: function(type, handler) {
+    if (!(type in this.eventHandlers)) {
+      this.eventHandlers[type] = [];
+    }
+    this.eventHandlers[type].push(handler);
+  },
+
+  Emit: function(type, data) {
+    data.type = type;
     console.log(data);
-    //this.eventHandler && this.eventHandler.call(null, data);
+
+    if (!(type in this.eventHandlers)) {
+      return;
+    }
+
+    for (var i = 0; i < this.eventHandlers[type].length; i++) {
+      this.eventHandlers[type][i](data);
+    }
   },
 
   AfterInit: function(callback) {
     this.afterInitConnectedCallback = callback;
   },
 
-  On: function(callback) {
-    this.eventHandler = callback;
-  },
-
   Volunteer: function(jobID) {
+    if (!this.socket.socket.connected) {
+      this.ConnectToServer(serverURL);
+    }
     this.socket.emit('volunteer', {jobID: jobID});
     this.Emit('volunteer', {jobID: jobID});
   },
@@ -179,6 +189,7 @@ Peer.prototype = {
 
   Disconnect: function() {
     this.socket.disconnect();
+    this.PingTimeout && clearTimeout(this.PingTimeout);
   }
 };
 
@@ -306,4 +317,3 @@ P2PConnection.prototype = {
 };
 
 var peer = new Peer();
-peer.ConnectToServer(serverURL);

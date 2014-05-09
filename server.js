@@ -117,6 +117,20 @@ var server = {
     this.app.io.route('partitiondone', function(req) {
       this.blockManager.Put(req.data.partitionID, req.socket.id);
     }.bind(this));
+
+    this.app.io.route('disconnect', function(req) {
+      var peer = this.GetPeer(req.sessionID);
+
+      for (var jobID in this.jobs) {
+        this.jobs[jobID] = this.jobs[jobID].filter(function(jobPeer) {
+          return jobPeer.id != peer.id;
+        });
+      }
+
+      delete this.peers[req.sessionID];
+      delete this.sockets[peer.socketID];
+      delete peer;
+    }.bind(this));
   },
 
   Broadcast: function(room, type, data) {
@@ -206,7 +220,9 @@ var server = {
   }
 };
 
+var peerID = 1;
 function Peer(sessionID, jobID, socket) {
+  this.id = peerID++;
   this.sessionID = sessionID;
   this.jobID = jobID
   this.socket = socket;

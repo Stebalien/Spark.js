@@ -8,9 +8,6 @@
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/peer.css">
 
-    <script src="http://localhost:5000/socket.io/socket.io.js"></script>
-    <script src="http://localhost:5000/static/peer.js"></script>
-
     <title>Spark Peer</title>
   </head>
 
@@ -41,8 +38,13 @@
               <code class="js">new RDD().map();</code> 
             </div>
           </div>
-          <button type="button" class="btn btn-success">Volunteer</span></button>
-
+          <script>
+          </script>
+          <div class="row">
+            <button type="button" data-job-id="1" id="volunteer_button"
+              data-loading-text="Connecting..." class="btn btn-success">Volunteer</button>
+            <button type="button" data-job-id="1" id="disconnect_button"
+          data-loading-text="Disconnecting..." class="btn btn-danger" disabled>Disconnect</button>
           <h2 class="sub-header">Peers</h2>
           <div class="table-responsive">
             <table class="table table-striped">
@@ -98,5 +100,8 @@
     
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script src="/js/bootstrap.min.js"></script>
+    <script src="http://localhost:5000/socket.io/socket.io.js"></script>
+    <script src="http://localhost:5000/static/peer.js"></script>
+    <script src="http://localhost:5000/static/dashboard.js"></script>
   </body>
 </html>
