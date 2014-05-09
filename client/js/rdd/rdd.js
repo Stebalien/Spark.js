@@ -96,7 +96,7 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
     function RDDImpl() {
       if (!(this instanceof RDD)) {
         var rdd = Object.create(RDDImpl.prototype);
-        RDDImpl.apply(rdd, args);
+        RDDImpl.apply(rdd, arguments);
         return rdd;
       }
       this.id = idCounter++; // Predictable, unique ID.
