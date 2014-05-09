@@ -22,60 +22,70 @@
     [
       {
         "id": "2/0",
+        "reduced": true,
         "dependencies": [
           "1/0"
         ]
       },
       {
         "id": "2/1",
+        "reduced": true,
         "dependencies": [
           "1/0"
         ]
       },
       {
         "id": "2/2",
+        "reduced": true,
         "dependencies": [
           "1/0"
         ]
       },
       {
         "id": "2/3",
+        "reduced": true,
         "dependencies": [
           "1/0"
         ]
       },
       {
         "id": "2/4",
+        "reduced": true,
         "dependencies": [
           "1/0"
         ]
       },
       {
         "id": "2/5",
+        "reduced": true,
         "dependencies": [
           "1/0"
         ]
       },
       {
         "id": "2/6",
+        "reduced": true,
         "dependencies": [
           "1/0"
         ]
       },
       {
         "id": "2/7",
+        "reduced": true,
         "dependencies": [
           "1/0"
         ]
       },
       {
         "id": "2/8",
+        "reduced": true,
         "dependencies": [
           "1/0"
         ]
       },
       {
         "id": "2/9",
+        "reduced": true,
         "dependencies": [
           "1/0"
         ]
