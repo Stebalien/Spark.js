@@ -5,6 +5,10 @@ define(["blockmanager"], function(bm) {
     getRDD: function(id) {
       return rddCache[id];
     },
+    getPartition: function(id) {
+      var pieces = id.split("/");
+      return this.getRDD(parseInt(pieces[0], 10)).partitions[parseInt(pieces[1], 10)];
+    },
     registerRDD: function(rdd) {
       rddCache[rdd.id] = rdd;
     },
