@@ -63,28 +63,45 @@ define([
     return this._entry.setValue("");
   };
 
+  function isAtBottom() {
+   return $(window).scrollTop() + $(window).height() == $(document).height();
+  }
+  function scroll() {
+    $("html, body").animate({ scrollTop: $(document).height() }, "slow");
+  }
+
   Console.prototype.displayCode = function(text) {
+    var doScroll = isAtBottom();
     var node = $("<pre class='cm-s-default code'></pre>").appendTo(this._display);
     CodeMirror.runMode(text, {name: "javascript"}, node[0]);
+    if (doScroll) scroll();
   };
 
   Console.prototype.displayError = function(err) {
+    var doScroll = isAtBottom();
     var node = $('<div class="alert alert-danger"></div>');
     node.text(err);
     node.appendTo(this._display);
+    if (doScroll) scroll();
   };
 
   Console.prototype.log = function log(object) {
+    var doScroll = isAtBottom();
     var text = JSON.stringify(object, null, 2);
     var node = $("<pre class='cm-s-default result'></pre>").appendTo(this._display);
     CodeMirror.runMode(text, {name: "javascript", json: true}, node[0]);
+    if (doScroll) scroll();
   };
 
   Console.prototype.promiseLog = function() {
+    var doScroll = isAtBottom();
     var node = $("<pre class='cm-s-default result'></pre>").appendTo(this._display);
     node.text("Calculating...");
+    if (doScroll) scroll();
     return function(value) {
+      var doScroll = isAtBottom();
       CodeMirror.runMode(JSON.stringify(value, null, 2), {name: "javascript", json: true}, node[0]);
+      if (doScroll) scroll();
     };
   };
 
