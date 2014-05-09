@@ -134,6 +134,10 @@ var server = {
       delete this.sockets[peer.socketID];
       delete peer;
     }.bind(this));
+
+    this.app.io.route('submit_rdd', function(req) {
+
+    });
   },
 
   Broadcast: function(room, type, data) {
