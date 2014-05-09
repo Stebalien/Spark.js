@@ -3,7 +3,6 @@ define([
   "util",
   "underscore",
   "rdd/coalesce",
-  "rdd/mixed",
   "rdd/map" ,
   "rdd/mappartitions",
   "rdd/flatmap",
@@ -11,11 +10,7 @@ define([
   "rdd/multiget",
   "rdd/split"
 ],
-function(RDD, util, _, CoalescedRDD, MixedRDD, MappedRDD, MappedPartitionRDD, FlatMapRDD, FilterRDD, MultigetRDD, SplitRDD) {
-
-  RDD.extend("mix", function(ways) {
-    return new MixedRDD(this, ways);
-  });
+function(RDD, util, _) {
 
   RDD.extend("fold", function(zero, fn, coalesceRate) {
     var that = this;
@@ -25,7 +20,7 @@ function(RDD, util, _, CoalescedRDD, MixedRDD, MappedRDD, MappedPartitionRDD, Fl
     }
     while (true) {
       // Map
-      that = new MappedPartitionRDD(that, function(values) {
+      that = that.mapPartitions(function(values) {
         return [_.reduce(values, fn, zero)];
       });
       // Check if done...
@@ -36,26 +31,6 @@ function(RDD, util, _, CoalescedRDD, MixedRDD, MappedRDD, MappedPartitionRDD, Fl
       that = that.coalesce(Math.ceil(that.partitions.length/coalesceRate));
     }
     return that;
-  });
-
-  RDD.extend("coalesce", function(width) {
-    return new CoalescedRDD(this, width);
-  });
-
-  RDD.extend("map", function(fn) {
-    return new MappedRDD(this, fn);
-  });
-
-  RDD.extend("mapPartitions", function(fn) {
-    return new MappedPartitionRDD(this, fn);
-  });
-
-  RDD.extend("split", function(n) {
-    return new SplitRDD(this, n);
-  });
-
-  RDD.extend("flatMap", function(fn) {
-    return new FlatMapRDD(this, fn);
   });
 
   RDD.extend("sum", function() {
@@ -70,14 +45,10 @@ function(RDD, util, _, CoalescedRDD, MixedRDD, MappedRDD, MappedPartitionRDD, Fl
     });
   });
 
-  RDD.extend("filter", function(fn) {
-    return new FilterRDD(this, fn);
-  });
-
   RDD.extend("count", function() {
-    return (new MappedPartitionRDD(this, function(values) {
+    return this.mapPartitions(function(values) {
       return [values.length];
-    })).sum();
+    }).sum();
   });
 
   RDD.extend("print", function() {
@@ -93,13 +64,6 @@ function(RDD, util, _, CoalescedRDD, MixedRDD, MappedRDD, MappedPartitionRDD, Fl
       var blob = new Blob(JSON.stringify(values), {type: "text/json"});
       saveAs(blob, "rdd-" + "-" + that.id + ".json");
     });
-  });
-
-  RDD.extendStatic("http", function(urls) {
-    if (!_.isArray(urls)) {
-      urls = [urls];
-    }
-    return new MultigetRDD(urls);
   });
 
   return RDD;

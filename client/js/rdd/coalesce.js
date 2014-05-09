@@ -1,5 +1,5 @@
 define(["rdd/rdd", "underscore"], function(RDD, _) {
-  return RDD.implement({
+  var CoalescedRDD = RDD.implement({
     init: function(parent, partitions) {
       this.parent = parent;
       this.requestedPartitions = partitions || 1;
@@ -88,5 +88,11 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
       });
     }
   });
+
+  RDD.extend("coalesce", function(width) {
+    return new CoalescedRDD(this, width);
+  });
+
+  return CoalescedRDD;
 });
 

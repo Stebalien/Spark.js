@@ -1,5 +1,5 @@
 define(["rdd/rdd", "underscore"], function(RDD, _) {
-  return RDD.implement({
+  var FilteredRDD = RDD.implement({
     init: function(parent, fn) {
       this.parent = parent;
       this.fn = fn;
@@ -22,4 +22,10 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
       });
     },
   });
+
+  RDD.extend("filter", function(fn) {
+    return new FilteredRDD(this, fn);
+  });
+
+  return FilteredRDD;
 });

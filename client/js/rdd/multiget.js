@@ -1,5 +1,5 @@
 define(["manager", "rdd/rdd", "underscore"], function(Manager, RDD, _) {
-  return RDD.implement({
+  var MultigetRDD = RDD.implement({
     init: function(urls) {
       this.urls = urls;
     },
@@ -27,4 +27,13 @@ define(["manager", "rdd/rdd", "underscore"], function(Manager, RDD, _) {
       req.send(null);
     }
   });
+
+  RDD.extendStatic("http", function(urls) {
+    if (!_.isArray(urls)) {
+      urls = [urls];
+    }
+    return new MultigetRDD(urls);
+  });
+
+  return MultigetRDD;
 });

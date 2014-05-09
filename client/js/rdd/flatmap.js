@@ -1,6 +1,6 @@
 define(["rdd/rdd", "underscore"], function(RDD, _) {
   // TODO: one to many?
-  return RDD.implement({
+  var FlatMapRDD = RDD.implement({
     init: function(parent, fn) {
       this.parent = parent;
       this.fn = fn;
@@ -23,4 +23,10 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
       });
     },
   });
+
+  RDD.extend("flatMap", function(fn) {
+    return new FlatMapRDD(this, fn);
+  });
+
+  return FlatMapRDD;
 });

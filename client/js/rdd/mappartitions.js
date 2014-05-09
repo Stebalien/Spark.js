@@ -1,5 +1,5 @@
 define(["rdd/rdd", "underscore"], function(RDD, _) {
-  return RDD.implement({
+  var MappedPartitionRDD = RDD.implement({
     init: function(parent, fn) {
       this.parent = parent;
       this.fn = fn;
@@ -20,6 +20,12 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
       });
     },
   });
+
+  RDD.extend("mapPartitions", function(fn) {
+    return new MappedPartitionRDD(this, fn);
+  });
+
+  return MappedPartitionRDD;
 });
 
 
