@@ -1,5 +1,6 @@
 define([
   "rdd/rdd",
+  "context",
   "util",
   "underscore",
   "rdd/coalesce",
@@ -10,7 +11,7 @@ define([
   "rdd/multiget",
   "rdd/split"
 ],
-function(RDD, util, _) {
+function(RDD, ctx, util, _) {
 
   RDD.extend("fold", function(zero, fn, coalesceRate) {
     var that = this;
@@ -51,20 +52,32 @@ function(RDD, util, _) {
     }).sum();
   });
 
-  RDD.extend("print", function() {
-    this._collect(function(values) {
-      console.log(values);
-      //ctx.console.log(values);
-    });
-  });
 
-  RDD.extend("save", function() {
-    var that = this;
-    this._collect(function(values) {
-      var blob = new Blob(JSON.stringify(values), {type: "text/json"});
-      saveAs(blob, "rdd-" + "-" + that.id + ".json");
+  if (ctx.isMaster) {
+    var nextPrintId = 0;
+    RDD.extend("print", function() {
+      var id = nextPrintId++;
+      var that = this;
+      // Wait
+      _.defer(function() {
+        ctx.console.promiseLog(id);
+        that._collect(function(values) {
+          ctx.console.fulfillLog(id, values);
+        });
+      });
     });
-  });
+
+    RDD.extend("save", function() {
+      var that = this;
+      this._collect(function(values) {
+        var blob = new Blob(JSON.stringify(values), {type: "text/json"});
+        saveAs(blob, "rdd-" + "-" + that.id + ".json");
+      });
+    });
+  } else {
+    RDD.extend("print", function() {});
+    RDD.extend("save", function() {});
+  }
 
   return RDD;
 });

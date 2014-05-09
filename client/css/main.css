@@ -14,3 +14,7 @@
 .repl .error {
   display: none;
 }
+
+.repl .result {
+  background: #fff;
+}

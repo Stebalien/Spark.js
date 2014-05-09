@@ -62,9 +62,10 @@ define([
   Console.prototype.setText = function(text) {
     return this._entry.setValue("");
   };
-  Console.prototype.displayCode = function(text, mode) {
-    var node = $("<pre class='cm-s-default'></pre>").appendTo(this._display);
-    CodeMirror.runMode(text, mode, node[0]);
+
+  Console.prototype.displayCode = function(text) {
+    var node = $("<pre class='cm-s-default code'></pre>").appendTo(this._display);
+    CodeMirror.runMode(text, {name: "javascript"}, node[0]);
   };
 
   Console.prototype.displayError = function(err) {
@@ -75,7 +76,17 @@ define([
 
   Console.prototype.log = function log(object) {
     var text = JSON.stringify(object, null, 2);
-    this.displayCode(text, {name: "javascript", json: true});
+    var node = $("<pre class='cm-s-default result'></pre>").appendTo(this._display);
+    CodeMirror.runMode(text, {name: "javascript", json: true}, node[0]);
   };
+
+  Console.prototype.promiseLog = function() {
+    var node = $("<pre class='cm-s-default result'></pre>").appendTo(this._display);
+    node.text("Calculating...");
+    return function(value) {
+      CodeMirror.runMode(JSON.stringify(value, null, 2), {name: "javascript", json: true}, node[0]);
+    };
+  };
+
   return Console;
 });

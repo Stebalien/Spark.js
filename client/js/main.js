@@ -33,6 +33,16 @@ function(_,             $      ,  Console,   Worker) {
   $(document).ready(function() {
     var c = new Console($(".repl"));
     var w = new Worker('js/spark_worker.js#master');
+
+    var promisedLogLines = [];
+    w.register("promiseLog", function(id) {
+      promisedLogLines[id] = c.promiseLog();
+    });
+
+    w.register("fulfillLog", function(id, obj) {
+      promisedLogLines[id](obj);
+    });
+
     c.on('exec', function() {
       c.lock();
       var text = c.getText();
@@ -40,14 +50,14 @@ function(_,             $      ,  Console,   Worker) {
         c.clearError();
         switch(result.status) {
           case "success":
-            c.displayCode(text, "javascript");
+            c.displayCode(text);
             c.setText("");
             break;
           case "invalid_syntax":
             c.setError(result.error);
             break;
           case "error":
-            c.displayCode(text, "javascript");
+            c.displayCode(text);
             c.setText("");
             c.displayError(result.error);
         }
