@@ -185,11 +185,16 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
     RDD.extend("_submit", function(callback) {});
   }
 
+  var partitionCache = [];
   Object.defineProperty(RDD.prototype, "partitions", {
     __proto__: null,
     enumerable: true,
     get: function() {
-      return ctx.cm.getOrComputePartitions(this);
+      var partitions = partitionCache[this.id];
+      if (!partitions) {
+        partitions = partitionCache[this.id] = this.__description__.getPartitions();
+      }
+      return partitions;
     }
   });
 

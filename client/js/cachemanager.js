@@ -1,5 +1,4 @@
 define(["blockmanager"], function(bm) {
-  var partitionCache = [];
   var rddCache = []; // It's sparse anyways...
 
   var CacheManager = {
@@ -8,9 +7,6 @@ define(["blockmanager"], function(bm) {
     },
     registerRDD: function(rdd) {
       rddCache[rdd.id] = rdd;
-    },
-    registerPartitions: function(rdd, partitions) {
-      partitionCache[rdd.id] = partitions;
     },
     getOrCompute: function(taskContext, partition, processor) {
       var partId = partition.getId()
@@ -36,14 +32,6 @@ define(["blockmanager"], function(bm) {
           processor.done();
         }
       });
-    },
-    getOrComputePartitions: function(rdd) {
-      var result = partitionCache[rdd.id];
-      if (!result) {
-        result = rdd.__description__.getPartitions();
-        CacheManager.registerPartitions(rdd, result);
-      }
-      return result;
     }
   };
   return CacheManager;
