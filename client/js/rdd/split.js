@@ -17,7 +17,13 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
       partition.dependencies[0].collect(taskContext, function(values) {
         var width = values.length/that.ways;
         var start = Math.floor(partition.index*width);
-        var end = Math.floor((partition.index+1)*width);
+        var end;
+        if (partition.index === (that.parent.partitions.length*that.ways-1)) {
+          // Make sure rounding errors don't cause us to drop values (yay floats).
+          end = values.length;
+        } else {
+          end = Math.floor((partition.index+1)*width);
+        }
         _.each(values.slice(start, end), function(item) {
           processor.process(item);
         });
