@@ -2,7 +2,7 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
   return RDD.implement({
     init: function(parent, partitions) {
       this.parent = parent;
-      this.requestedPartitions = partitions;
+      this.requestedPartitions = partitions || 1;
     },
     getPartitions: function() {
       var that = this;
