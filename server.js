@@ -1,11 +1,14 @@
 var express = require('express.io');
 var url = require('url');
+var BlockManager = require('./blockmanager.js');
 
 var server = {
   peers: {},
   jobs: {},
   sockets: {},
   app: null,
+  eventHandlers: {},
+  blockManager: null,
 
   AddNewPeer: function(sessionID, jobID, socket) {
     var peer = new Peer(sessionID, jobID, socket);
@@ -17,6 +20,10 @@ var server = {
     this.sockets[socket.id] = socket;
   },
 
+  GetPeer: function(sessionID) {
+    return this.peers[sessionID];
+  },
+
   GetSocket: function(socketID) {
     return this.sockets[socketID];
   },
@@ -26,6 +33,7 @@ var server = {
   },
 
   Init: function() {
+    this.blockManager = new BlockManager(this);
     this.app = express();
     this.app.http().io();
 
@@ -99,6 +107,14 @@ var server = {
       var socket = this.GetSocket(sockets.answererSocketID);
       this.SendToPeer(socket, req.sessionID, 'icecandidate', req.data);
     }.bind(this));
+
+    this.app.io.route('partitionrequest', function(req) {
+      this.blockManager.Get(req.data.partitionID, req.socket.id);
+    }.bind(this));
+
+    this.app.io.route('partitiondone', function(req) {
+      this.blockManager.Put(req.data.partitionID, req.socket.id);
+    }.bind(this));
   },
 
   Broadcast: function(room, type, data) {
@@ -168,6 +184,23 @@ var server = {
 
   PeersForJob: function(jobID) {
     return this.jobs[jobID] || [];
+  },
+
+  On: function(type, handler) {
+    if (!(type in this.eventHandlers)) {
+      this.eventHandlers[type] = [];
+    }
+    this.eventHandlers[type].push(handler);
+  },
+
+  Emit: function(type, data) {
+    if (!(type in this.eventHandlers)) {
+      return;
+    }
+
+    for (var i = 0; i < this.eventHandlers[type].length; i++) {
+      this.eventHandlers[type][i](data);
+    }
   }
 };
 
