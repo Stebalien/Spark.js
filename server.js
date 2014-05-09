@@ -50,9 +50,8 @@ var server = {
       this.SendReliable(socket, {type: 'connected', socketID: socket.id});
     }.bind(this));
 
+    this.app.use('/client', express.static(__dirname + '/client'));
     this.app.use('/static', express.static(__dirname + '/'));
-    this.app.use('/css', express.static(__dirname + '/client/css'));
-    this.app.use('/js', express.static(__dirname + '/client/js/lib'));
  
     // Client should access this route to submit a new RDD
     this.app.get('/', function(req, res) {
@@ -120,6 +119,10 @@ var server = {
 
     this.app.io.route('disconnect', function(req) {
       var peer = this.GetPeer(req.sessionID);
+
+      if (!peer) {
+        return;
+      }
 
       for (var jobID in this.jobs) {
         this.jobs[jobID] = this.jobs[jobID].filter(function(jobPeer) {
