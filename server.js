@@ -51,6 +51,8 @@ var server = {
     }.bind(this));
 
     this.app.use('/static', express.static(__dirname + '/'));
+    this.app.use('/css', express.static(__dirname + '/client/css'));
+    this.app.use('/js', express.static(__dirname + '/client/js/lib'));
  
     // Client should access this route to submit a new RDD
     this.app.get('/', function(req, res) {

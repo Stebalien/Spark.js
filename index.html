@@ -1,5 +1,102 @@
-<script src="http://localhost:5000/socket.io/socket.io.js"></script>
-<script src="http://localhost:5000/static/peer.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<body></body>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/peer.css">
 
+    <script src="http://localhost:5000/socket.io/socket.io.js"></script>
+    <script src="http://localhost:5000/static/peer.js"></script>
+
+    <title>Spark Peer</title>
+  </head>
+
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        <a class="navbar-brand col-md-12 text-center" href="#">Spark in the Browser</a>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+          <ul class="nav nav-sidebar">
+            <li><h4>Active Jobs</h4></li>
+            <li class="active"><a href="#">Map Job <span class="badge pull-right">2</span></a></li>
+            <li><a href="#">Filter Job <span class="badge pull-right">5</span></a></li>
+          </ul>
+          <ul class="nav nav-sidebar">
+            <li><h4>My Jobs</h4></li>
+            <li><a href="">Filter Job</a></li>
+          </ul>
+        </div>
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+          <h1 class="page-header">Map Job</h1>
+          <div class="panel panel-default">
+            <div class="panel-body">
+              <code class="js">new RDD().map();</code> 
+            </div>
+          </div>
+          <button type="button" class="btn btn-success">Volunteer</span></button>
+
+          <h2 class="sub-header">Peers</h2>
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>#</th>
+                  <th>Partition ID</th>
+                  <th>Last Response</th>
+                  <th>Socket ID</th>
+                  <th>Connection Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="label label-primary">Me</span></td>
+                  <td>1</td>
+                  <td>1</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td>2</td>
+                  <td>2</td>
+                  <td>10s</td>
+                  <td></td>
+                  <td><span class="label label-danger">Not Connected</span></td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td>3</td>
+                  <td>3</td>
+                  <td>8s</td>
+                  <td></td>
+                  <td><span class="label label-default">Connecting</span></td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td>4</td>
+                  <td>4</td>
+                  <td>2s</td>
+                  <td></td>
+                  <td><span class="label label-success">Connected</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+  </body>
+</html>
