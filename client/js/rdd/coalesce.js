@@ -7,7 +7,7 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
     getPartitions: function() {
       var that = this;
       var parentPartitions = that.parent.partitions;
-      if (this.requestedPartitions > parentPartitions.length) {
+      if (this.requestedPartitions >= parentPartitions.length) {
         return _.map(parentPartitions, function(part, i) {
           return new RDD.Partition(that, i, [part]);
         });
