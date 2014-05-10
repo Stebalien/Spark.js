@@ -13,9 +13,13 @@ function Scheduler(server){
   // this is a map of partition id to whatever is dependent on it
   this.mapPartitionToChildren = {}; 
 
+  // maps sequence number to status
+  this.sequenceNumbers = {}
+
 }
 
 Scheduler.prototype = {
+
   //this function will remove a value from an array
   RemoveFromArray: function(arr1, value) {
     index = arr1.indexOf(value);
@@ -75,6 +79,42 @@ Scheduler.prototype = {
   AssignTask: function(workerId, task, partitionList) {
      // code for actually assigned a workerto a given task
   
+  }
+
+  //Builds partition dependencies based on json object 
+  //See example-submission.json
+  BuildDependencyTree: function(submission) {
+    var json = JSON.parse(submission);
+    
+    //Check if this submission has already been added
+    if !(json.seq in this.sequenceNumbers) {
+      for (var i = 0; i < json.rdds.length; i++) {
+        var rdd = json.rdds[i];  
+
+        for (var j = 0; j < rdd.length; j++) {
+          var partition = rdd[j];
+          //Build node <- parents relationships
+          if !(partition.id in this.mapPartitionToParent) {
+            this.mapPartitionToParent[partition.id] = partition.dependencies;
+          } else {
+            this.mapPartitionToParent[partition.id] = Array.prototype.push.apply(this.mapPartitionToParent[partition.id], partition.dependencies);
+          }  
+
+	  //Build node <- children relationships
+          for (var k = 0; k < partition.dependencies.length; k ++) {
+            var dependency = partition.dependencies[k];
+            if !(dependency in this.mapPartitionToChildren) {
+              this.mapPartitionToChildren[dependency] = [partition.id];
+            } else {
+              this.mapPartitionToChilrden[dependency] = this.mapPartitionToChildren.push(partition.id);
+            }
+          }
+
+        }
+      }    
+      this.sequenceNumbers[json.seq] = //ADDED?
+    } 
+
   }
 
 };
