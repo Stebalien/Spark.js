@@ -345,7 +345,7 @@ define(['blockmanager'], function(BlockManager) {
 
       this.channel.onopen = function() {
         this.channelOpened = true;
-        this.SendMessage({type: 'get', id: 1});
+        this.SendMessage({type: 'get', id: 1, jobID: 1});
       }.bind(this);
     },
 

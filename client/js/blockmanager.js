@@ -1,9 +1,11 @@
 define([], function() {
 
-  function JobBlockManager(peer) {
+  function JobBlockManager(jobID, peer) {
+    this.jobID = jobID;
     this.peer = peer;
     this.localBlocks = {};
     this.remoteBlockSocketIDs = {};
+    this.pendingGets = {};
   }
 
   JobBlockManager.prototype.Get = function(id, callback) {
@@ -13,18 +15,35 @@ define([], function() {
       return;
     }
 
+    if (!(id in this.pendingGets)) {
+      this.pendingGets[id] = [];
+    }
+    this.pendingGets[id].push(callback);
+
     // Fetch from another peer
     if (id in this.remoteBlockSocketIDs) {
-      this.peer.SendMessageToPeer(this.remoteBlockSocketIDs[id], {
-        type: 'get',
-        id: id
-      }, callback);
+      this.GetFromPeer(id, this.remoteBlockSocketIDs[id]);
       return;
     }
 
+    var message = {
+      id: id,
+      jobID: this.jobID
+    };
+
     // Don't know where it is; ask the server
-    this.peer.socket.emit('blockmanager/get', function() {
-      // TODO: server blockmanager
+    this.peer.socket.emit('blockmanager:get', message, function(socketIDs) {
+      for (var socketID in socketIDs) {
+        this.GetFromPeer(id, socketID);
+      }
+    }.bind(this));
+  };
+
+  JobBlockManager.prototype.GetFromPeer = function(id, socketID) {
+    this.peer.SendMessageToPeer(socketID, {
+      type: 'get',
+      id: id,
+      jobID: this.jobID
     });
   };
 
@@ -36,6 +55,12 @@ define([], function() {
     if (replication && replication > 1) {
       // TODO: replicate
     }
+
+    for (var i = 0; i < this.pendingGets[id].length; i++) {
+      this.pendingGets[id][i](value);
+    }
+
+    this.pendingGets[id] = [];
   };
 
   JobBlockManager.prototype.Delete = function(id) {
@@ -55,7 +80,7 @@ define([], function() {
     },
 
     CreateJob: function(jobID) {
-      this.jobBlockManagers[jobID] = new JobBlockManager(jobID);
+      this.jobBlockManagers[jobID] = new JobBlockManager(jobID, this.peer);
     },
 
     Get: function(jobID, partitionID, callback) {

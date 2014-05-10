@@ -131,12 +131,17 @@ var server = {
     this.app.io.route('blockmanager', {
       'get': function(req) {
         var id = req.data.id;
-        var socketID = req.socket.id;
         var jobID = req.data.jobID;
-        this.GetBlockManager
+        this.blockManager.Get(jobID, id, function(socketIDs) {
+          req.io.respond(socketIDs);
+        });
       }.bind(this),
 
       'put': function(req) {
+        var id = req.data.id;
+        var jobID = req.data.jobID;
+        var socketID = req.socket.id;
+        this.blockManager.Put(jobID, id, socketID);
       }.bind(this)
     });
 
