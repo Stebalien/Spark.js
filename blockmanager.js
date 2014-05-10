@@ -1,17 +1,17 @@
 var _ = require('underscore');
 
-function BlockManager(server, jobID) {
-  this.server = server;
-  this.jobID = jobID;
+function JobBlockManager(jobID) {
+  this.jobID;
   this.blocks = {};
   this.pendingGets = {};
 }
 
-BlockManager.prototype = {
+JobBlockManager.prototype = {
   // Find out which peer is working on partitionID
   Get: function(partitionID, callback) {
     if (partitionID in this.blocks) {
-      return this.blocks[partitionID]; 
+      callback(this.blocks[partitionID]);
+      return;
     }
 
     if (!(partitionID in this.pendingGets)) {
@@ -45,6 +45,46 @@ BlockManager.prototype = {
 
   Delete: function(partitionID) {
     this.deleted[partitionID] = true;
+  }
+};
+
+function BlockManager() {
+  this.jobBlockManagers = {};
+}
+
+BlockManager.prototype = {
+  JobExists: function(jobID) {
+    return jobID in this.jobBlockManagers;
+  },
+
+  Create: function(jobID) {
+    this.jobBlockManagers[jobID] = new JobBlockManager(jobID);
+  },
+
+  Get: function(jobID, partitionID, callback) {
+    if (!this.JobExists(jobID)) {
+      throw new Error('BlockManager for ' + jobID + ' does not exist. Get failed.');
+    }
+
+    var blockManager = this.jobBlockManagers[jobID];
+    blockManager.Get(partitionID, callback);
+  },
+
+  Put: function(partitionID, socketID, replication) {
+    if (!this.JobExists(jobID)) {
+      throw new Error('BlockManager for ' + jobID + ' does not exist. Put failed.');
+    }
+
+    var blockManager = this.jobBlockManagers[jobID];
+    blockManager.Put(partitionID, socketID, replication);
+  },
+
+  Delete: function(partitionID) {
+    if (!this.JobExists(jobID)) {
+      throw new Error('BlockManager for ' + jobID + ' does not exist. Delete failed.');
+    }
+    var blockManager = this.jobBlockManagers[jobID];
+    blockManager.Delete(partitionID);
   }
 };
 
