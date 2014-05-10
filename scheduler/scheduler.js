@@ -41,8 +41,16 @@ Scheduler.prototype = {
   // basically right now it will select the worker with the minimum amount of tasks
   // this should be later optimized 
   SelctWorker : function()  {
-	
+	minTasks = 100000;
+	var bestWorker = null;
+        for (var key in this.mapWorkToTime) {
+	        count = this.mapWorkToTime[key].length;
+		if (count < minTasks){
+		  bestWorker = key;
+		}	
 
+	}	
+	return bestWorker
   }
 
   // this function is responsible for removing nodes from the mapPartitiontoParent
@@ -90,9 +98,25 @@ Scheduler.prototype = {
     	
   }
   
-  //iterate through all the partitions
-  // finds the first one that does not have any partitions
-  // this needs to be finished
+  // this method is responsible for checking that the worker is done with its task 
+  // if it is not done in a reasonable time, then we reassign its tasks to someone else
+  AlertTimeOut : function() {
+   for (var key in mapWorkToTime) {
+	oldTime = mapWorkToTime[key];
+	if (getTime() > oldTime + timeOutTime) {
+	   console.log("we have to drop this worker)
+	   tasks = this.mapWorkerToTasks[key];
+	   for (var task in tasks) {
+		AssignTaks(task);
+	   }
+	   delete this.mapWorkerToTasks[key]
+	   delete this.mapWorkToTime[key]
+	}
+   }
+}
+
+  
+  // creates the task based on the partition
   CreateTask: function(workerId, task, partitionList) {
      // code for actually assigned a workerto a given task
   
