@@ -39,23 +39,25 @@ require(["peer", "blockmanager", "jquery", "bootstrap", "underscore"], function(
         .prop('disabled', true);
     });
 
-    peer.On('new_job', function(jobID, jobName) {
-      var item = $('<li></li>');
-      var a = $('<a></a>');
-      a.text(jobName);
-      a.attr('data-job-id', jobID);
-      a.attr('href', '#');
-      a.attr('class', 'job-list-link');
-      var badge = $('<span></span>');
-      badge.attr('class', 'badge pull-right');
-      badge.text(1);
-      a.append(badge);
-      item.append(a);
+    peer.On('newjobs', function(newJobs) {
+      var jobs = newJobs.jobs;
+      for (var jobID in jobs) {
+        var item = $('<li></li>');
+        var a = $('<a></a>');
+        a.text(jobs[jobID].name);
+        a.attr('data-job-id', jobID);
+        a.attr('href', '#');
+        a.attr('class', 'job-list-link');
+        var badge = $('<span></span>');
+        badge.attr('class', 'badge pull-right');
+        badge.text(1);
+        a.append(badge);
+        item.append(a);
 
-      jobList[jobID] = {
-        job_list_item: item
-      };
-      $('#job_list').append(item);
+        jobs[jobID].job_list_item = item;
+        jobList[jobID] = jobs[jobID];
+        $('#job_list').append(item);
+      }
     });
 
     peer.On('added_to_job', function() {

@@ -22,10 +22,16 @@ var server = {
   },
 
   CreatePingData: function(peer) {
+    if (_.isEmpty(this.jobs)) {
+      return {
+        alljobs: {}
+      };
+    }
+
     var jobIDs = _.pluck(this.jobs, 'id');
-    var jobPeerIDs = _.invoke(this.jobs, 'GetPeerIds');
+    var jobs = _.invoke(this.jobs, 'Serialize');
     return {
-      alljobs: _.object(jobIDs, jobPeerIDs)
+      alljobs: _.object(jobIDs, jobs)
     };
   },
 
@@ -289,7 +295,18 @@ Job.prototype = {
   },
 
   GetPeerIds: function() {
+    if (this.volunteers.length == 0) {
+      return [];
+    }
     return _.pluck(this.volunteers, 'id');
+  },
+
+  Serialize: function() {
+    return {
+      id: this.id,
+      name: this.name,
+      peers: this.GetPeerIds()
+    };
   }
 };
 

@@ -102,17 +102,16 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       var existingJobIDs = _.keys(this.jobs);
 
       var newJobs = _.omit(jobs, existingJobIDs);
-      this.Emit('newjobs', newJobs);
+      this.Emit('newjobs', {jobs: newJobs});
 
       var existingJobs = _.pick(jobs, existingJobIDs);
 
-      var newPeers = {};
+      var newPeers = _.pick(jobs, existingJobIDs); 
       for (var jobID in existingJobs) {
-        newPeers[jobID] = _.difference(existingJobs[jobID], this.jobs[jobID]);
+        newPeers[jobID].peers = _.difference(existingJobs[jobID].peers, this.jobs[jobID].peers);
       }
 
-      this.Emit('newpeers', newPeers);
-
+      this.Emit('newpeers', {peers: newPeers});
       this.jobs = jobs;
     },
 
@@ -162,7 +161,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         }
 
         if (runHandler) {
-          handler();
+          handler(data);
           if (this.eventHandlers[type][i].once) {
             toBeRemoved[i] = true;
           }
