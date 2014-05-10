@@ -1,6 +1,7 @@
 var express = require('express.io');
 var url = require('url');
 var BlockManager = require('./blockmanager.js');
+var _ = require('underscore');
 
 var server = {
   peers: {},
@@ -14,9 +15,9 @@ var server = {
     var peer = new Peer(sessionID, jobID, socket);
     this.peers[sessionID] = peer;
     if (!(jobID in this.jobs)) {
-      this.jobs[jobID] = [];
+      this.jobs[jobID] = new Job('testname');
     }
-    this.jobs[jobID].push(peer);
+    this.jobs[jobID].AddPeer(peer);
     this.sockets[socket.id] = socket;
   },
 
@@ -84,9 +85,7 @@ var server = {
     this.app.io.route('leave_job', function(req) {
       var jobID = req.data.jobID;
       req.io.leave(jobID);
-      this.jobs[jobID] = this.jobs[jobID].filter(function(jobPeer) {
-        return jobPeer.sessionID != req.sessionID;
-      });
+      this.jobs[jobID].RemovePeer(this.GetPeer(req.sessionID));
     }.bind(this));
 
     this.app.io.route('ping', function(req) {
@@ -126,9 +125,7 @@ var server = {
       }
 
       for (var jobID in this.jobs) {
-        this.jobs[jobID] = this.jobs[jobID].filter(function(jobPeer) {
-          return jobPeer.id != peer.id;
-        });
+        this.jobs[jobID] = this.jobs[jobID].RemovePeer(peer);
       }
 
       delete this.peers[req.sessionID];
@@ -224,7 +221,7 @@ var server = {
   },
 
   PeersForJob: function(jobID) {
-    return this.jobs[jobID] || [];
+    return this.jobs[jobID].GetPeers();
   },
 
   On: function(type, handler) {
@@ -249,7 +246,7 @@ var peerID = 1;
 function Peer(sessionID, jobID, socket) {
   this.id = peerID++;
   this.sessionID = sessionID;
-  this.jobID = jobID
+  this.jobID = jobID;
   this.socket = socket;
   this.UpdatePingTime();
 }
@@ -257,6 +254,29 @@ function Peer(sessionID, jobID, socket) {
 Peer.prototype = {
   UpdatePingTime: function() {
     this.mostRecentPing = new Date().getTime();
+  }
+};
+
+var jobID = 1;
+function Job(name) {
+  this.id = jobID++;
+  this.name = name;
+  this.volunteers = [];
+}
+
+Job.prototype = {
+  AddPeer: function(peer) {
+    this.volunteers.push(peer);
+  },
+
+  RemovePeer: function(peer) {
+    this.volunteers = this.volunteers.filter(function(jobPeer) {
+      return peer.id != jobPeer.id;
+    });
+  },
+
+  GetPeers: function() {
+    return this.volunteers;
   }
 };
 
