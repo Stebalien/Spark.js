@@ -1,4 +1,4 @@
-define(["underscore", "util", "context"], function(_, util, ctx) {
+define(["underscore", "util", "worker/master", "worker/rddmanager", "worker/goalmanager"], function(_, util, Master, RDDManager, GoalManager) {
   var idCounter = 0;
 
   function setattr(obj, name, fn) {
@@ -45,16 +45,13 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
       dependencies = [dependencies];
     }
     this.dependencies = Object.freeze(dependencies || []);
+    this.id = this.rdd.id + "/" + this.index;
     Object.freeze(this);
   }
 
 
   Partition.prototype.iterate = function(taskContext, processor) {
     return this.rdd.iterate(taskContext, this, processor);
-  };
-
-  Partition.prototype.getId = function() {
-    return this.rdd.id + "/" + this.index;
   };
 
   Partition.prototype.collect = function(taskContext, cb) {
@@ -102,7 +99,7 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
         return rdd;
       }
       this.id = idCounter++; // Predictable, unique ID.
-      ctx.cm.registerRDD(this);
+      RDDManager.registerRDD(this);
       this.__description__ = new RDDContext(arguments);
       this.__description__.__rdd__ = this;
       // Immutable (to make it deterministic and to avoid interference).
@@ -110,9 +107,10 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
     };
 
     RDDImpl.prototype = Object.create(RDD.prototype);
-    RDDImpl.constructor = RDDImpl;
-    Object.freeze(RDDImpl);
+    RDDImpl.prototype.constructor = RDDImpl;
+    RDDImpl.prototype.reducing = description.reducing;
     Object.freeze(RDDImpl.prototype);
+    Object.freeze(RDDImpl);
 
     return RDDImpl;
   });
@@ -143,18 +141,18 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
       taskContext.processorsFor = {};
     }
 
-    var partId = partition.getId();
+    var partId = partition.id;
     var processors = taskContext.processorsFor[partId];
 
     if (!taskContext.processorsFor[partId]) {
       processors = taskContext.processorsFor[partId] = [processor];
       var intermediate = splatProcess(processors);
-      if (ctx.gm.isSource(partition)) {
+      if (taskContext.sources[partition.id]) {
         // Someone elses problem (probably!).
-        ctx.gm.getOrCompute(taskContext, partition, intermediate);
+        GoalManager.getOrCompute(taskContext, partition, intermediate);
       } else if (this.persistLevel > 0) {
         // Try to get it from the cache.
-        ctx.cm.getOrCompute(taskContext, partition, intermediate);
+        CacheManager.getOrCompute(taskContext, partition, intermediate);
       } else {
         // Just compute it.
         this.__description__.compute(taskContext, partition, intermediate);
@@ -169,17 +167,23 @@ define(["underscore", "util", "context"], function(_, util, ctx) {
     return this;
   });
 
-  if (ctx.isMaster) {
+  if (self.isMaster) {
     RDD.extend("_submit", function() {
-      /* TODO: NOPPED until we get the scheduler working (compute locally for now).
-      ctx.master.submit(this.partitions);
-      */
-     return this;
+      var that = this;
+      // Defer this so that the code finishes evaluating first. (So we include the code when we submit.
+      // Major hackage...
+      _.defer(function() {
+        Master.submit(that.partitions);
+      });
+      return this;
     });
     RDD.extend("_collect", function(callback) {
       // Do the actual coalesce on this node (submit the parent).
       // XXX: Cyclic dependency. Not a real problem but still grrr...
-      this._submit().coalesce(1).partitions[0].collect({}, function(values) {
+      var taskContext = {
+        sources: _.object(_.pluck(this.partitions, "id"), _.map(this.partitions, _.constant(true)))
+      };
+      this._submit().coalesce(1).partitions[0].collect(taskContext, function(values) {
         callback(values);
       });
     });

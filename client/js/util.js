@@ -1,5 +1,9 @@
 define(["underscore"], function(_) {
   return {
+    toURL: function toURL(text) {
+      var blob = new Blob([text]);
+      return URL.createObjectURL(blob);
+    },
     deepFreeze: function deepFreeze(o) {
       Object.freeze(o);
 

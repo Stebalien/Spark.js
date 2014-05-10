@@ -1,20 +1,8 @@
-define(["blockmanager"], function(bm) {
-  var rddCache = []; // It's sparse anyways...
-
+define(["worker/blockmanager"], function(BlockManager) {
   var CacheManager = {
-    getRDD: function(id) {
-      return rddCache[id];
-    },
-    getPartition: function(id) {
-      var pieces = id.split("/");
-      return this.getRDD(parseInt(pieces[0], 10)).partitions[parseInt(pieces[1], 10)];
-    },
-    registerRDD: function(rdd) {
-      rddCache[rdd.id] = rdd;
-    },
     getOrCompute: function(taskContext, partition, processor) {
-      var partId = partition.getId()
-      bm.get(partId, function(values) {
+      BlockManager.get(partition.id, false, function(values) {
+        if (values instanceof Error) throw values;
         if (!values) {
           values = [];
           partition.rdd.compute(taskContext, partition, {
@@ -22,7 +10,7 @@ define(["blockmanager"], function(bm) {
               values.push(item);
             },
             done: function() {
-              bm.put(partId, values);
+              BlockManager.put(partition.id, values, partition.persistLevel);
               _.each(values, function(item) {
                 processor.process(item);
               });

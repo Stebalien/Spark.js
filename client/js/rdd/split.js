@@ -1,5 +1,6 @@
 define(["rdd/rdd", "underscore"], function(RDD, _) {
   var SplitRDD = RDD.implement({
+    reducing: true,
     init: function(parent, ways) {
       this.parent = parent;
       this.ways = ways;

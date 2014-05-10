@@ -1,43 +1,21 @@
-importScripts("lib/require.js");
-importScripts("lib/underscore.js");
-
-require.config({
-  shim: {
-    underscore: {
-      exports: '_',
-      deps: ['underscore.string'],
-      init: function(UnderscoreString) {
-        _.mixin(UnderscoreString);
+define(["blockmanager", "worker"], function(BlockManager, Worker) {
+  function SparkWorker(isMaster) {
+    Worker.prototype.constructor.call(this, isMaster ? "js/master_worker.js" : "js/slave_worker.js");
+    // Block Manager
+    this.register({
+      "blockmanager/get": function(key, wait, cb) {
+        BlockManager.get(key, wait, cb);
+      },
+      "blockmanager/put": function(key, value, persist) {
+        BlockManager.put(key, value, persist);
       }
-    },
-  },
-  paths: {
-    underscore: 'lib/underscore',
-    "underscore.string": 'lib/underscore.string',
-    EventEmitter: 'lib/EventEmitter'
-  }
-});
+    });
 
-require(["underscore", "worker/rpc", "worker/port", "rdd"], function(_, rpc, port, RDD) {
-  self.RDD = RDD;
-  rpc.register("exec", function(script) {
-    try {
-      importScripts(script);
-    } catch (e) {
-      var status;
-      if (e instanceof SyntaxError || e.message.match(/^Uncaught SyntaxError: /)) {
-        status = "invalid_syntax";
-      } else {
-        status = "error";
-      }
-      return {
-        status: status,
-        error:  e.toString()
-      };
-    }
-    return {
-      status: "success"
-    }
-  });
-  port.send("ready");
+    //
+  };
+
+  SparkWorker.prototype = Object.create(Worker.prototype);
+  SparkWorker.prototype.constructor = SparkWorker;
+
+  return SparkWorker;
 });

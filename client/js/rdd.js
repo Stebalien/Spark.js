@@ -1,6 +1,6 @@
 define([
   "rdd/rdd",
-  "context",
+  "worker/console",
   "util",
   "underscore",
   "rdd/coalesce",
@@ -11,7 +11,7 @@ define([
   "rdd/multiget",
   "rdd/split"
 ],
-function(RDD, ctx, util, _) {
+function(RDD, WorkerConsole, util, _) {
 
   RDD.extend("fold", function(zero, fn, coalesceRate) {
     var that = this;
@@ -34,6 +34,19 @@ function(RDD, ctx, util, _) {
     return that;
   });
 
+  /*
+  RDD.extend("sort", function(fn) {
+    // TODO...
+    var that = new SampledNRDD(this, 20).coalesce().
+    that.
+    this.count()._collect(function(values) {
+      var size = values[0];
+      var frac = Math.min(that.partitions.length*20 / Math.max(size, 1), 1.0);
+      var sampled = new SampledRDD(frac);
+    });
+  });
+  */
+
   RDD.extend("sum", function() {
     return this.fold(0, function(a, b) {
       return a + b;
@@ -53,16 +66,16 @@ function(RDD, ctx, util, _) {
   });
 
 
-  if (ctx.isMaster) {
+  if (self.isMaster) {
     var nextPrintId = 0;
     RDD.extend("print", function() {
       var id = nextPrintId++;
       var that = this;
       // Wait
       _.defer(function() {
-        ctx.console.promiseLog(id);
+        WorkerConsole.promiseLog(id);
         that._collect(function(values) {
-          ctx.console.fulfillLog(id, values);
+          WorkerConsole.fulfillLog(id, values);
         });
       });
     });
