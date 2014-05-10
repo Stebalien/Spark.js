@@ -332,7 +332,7 @@ MessageHandler.prototype = {
 var MessageHandler;
 
 describe('Peer', function() {
-  this.timeout(18000);
+  this.timeout(8000);
 
   before(function(done) {
     server.Init();
@@ -387,9 +387,9 @@ describe('Peer', function() {
 
     messageHandler.Once('datachannel', {1: true, 2: true}, done);
 
-    client1.Open(function() {
+    //client1.Open(function() {
       client1.Volunteer(testJob);
-    });
+    //});
     client2.Open(function() {
       client2.Volunteer(testJob);
     });

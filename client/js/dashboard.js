@@ -38,6 +38,4 @@ require(["peer", "blockmanager", "jquery", "bootstrap"], function(Peer, BlockMan
   });
 });
 
-    //<script src="/client/js/peer.js"></script>
-    //<script src="/client/js/blockmanager.js"></script>
 

@@ -91,6 +91,8 @@ var server = {
       var description = req.data.description;
 
       var socket = this.GetSocket(sockets.answererSocketID);
+      console.log(this.sockets);
+      console.log(req.data);
       this.SendToPeer(socket, req.sessionID, 'offer', req.data);
     }.bind(this));
 

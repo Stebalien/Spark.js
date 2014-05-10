@@ -1,4 +1,4 @@
-define(['blockmanager', 'EventEmitter'], function(BlockManager, EventEmitter) {
+define(['blockmanager'], function(BlockManager) {
 
   var PING_INTERVAL = 1000;
 
@@ -58,7 +58,7 @@ define(['blockmanager', 'EventEmitter'], function(BlockManager, EventEmitter) {
 
     Init: function(data, ack) {
       // Notify server that message has been received
-      ack();
+      ack && ack();
 
       this.Ping();
       if (this.init) {
@@ -85,6 +85,7 @@ define(['blockmanager', 'EventEmitter'], function(BlockManager, EventEmitter) {
       } else if (message.type == 'icecandidate') {
         this.OnIceCandidate(message);
       } else if (message.type == 'new_peer') {
+        this.ConnectToPeer(message.socketID);
         //this.SendOffer(message);
       } else if (message.type == 'added_to_job') {
         this.Emit('added_to_job', message);
@@ -98,7 +99,7 @@ define(['blockmanager', 'EventEmitter'], function(BlockManager, EventEmitter) {
       this.socket.emit('ping');
     },
 
-    On: function(type, handler) {
+    On: function(type, handler, once) {
       if (!(type in this.eventHandlers)) {
         this.eventHandlers[type] = [];
       }
@@ -106,10 +107,15 @@ define(['blockmanager', 'EventEmitter'], function(BlockManager, EventEmitter) {
       if (typeof(handler) === 'function') {
         handler = {
           data: {},
-          handler: handler
+          handler: handler,
+          once: once
         };
       }
       this.eventHandlers[type].push(handler);
+    },
+
+    Once: function(type, handler) {
+      this.On(type, handler, true);
     },
 
     Emit: function(type, data) {
@@ -162,8 +168,8 @@ define(['blockmanager', 'EventEmitter'], function(BlockManager, EventEmitter) {
       this.Emit('volunteer', {jobID: jobID});
     },
 
-    SendOffer: function(data) {
-      var connection = this.CreatePeerConnectionForOfferer(data.socketID);
+    SendOffer: function(socketID) {
+      var connection = this.CreatePeerConnectionForOfferer(socketID);
       connection.SendOffer(function(sockets, description) {
         var data = {
           sockets: sockets,
@@ -227,8 +233,19 @@ define(['blockmanager', 'EventEmitter'], function(BlockManager, EventEmitter) {
     },
 
     ConnectToPeer: function(socketID, callback) {
-      this.SendOffer(socketID);
-      //callback && this.Once('datachannel', callback);
+      if (!this.connections[socketID]) {
+        this.SendOffer(socketID);
+
+        callback && this.Once('channel_opened', {
+          handler: callback,
+          data: {
+            localSocketID: this.socketID,
+            remoteSocketID: socketID
+          }
+        });
+      } else if (this.connection[socketID].ChannelOpened()) {
+        callback();
+      }
     }
   };
 
@@ -239,6 +256,7 @@ define(['blockmanager', 'EventEmitter'], function(BlockManager, EventEmitter) {
     this.remoteSocketID = remoteSocketID;
     this.offerSent = false;
     this.remoteDescriptionSet = false;
+    this.channelOpened = false;
   }
 
   P2PConnection.prototype = {
@@ -299,6 +317,7 @@ define(['blockmanager', 'EventEmitter'], function(BlockManager, EventEmitter) {
       }
 
       this.channel.onopen = function() {
+        this.channelOpened = true;
         this.channel.send("testmessagefrom " + this.localSocketID);
       }.bind(this);
     },
@@ -352,6 +371,10 @@ define(['blockmanager', 'EventEmitter'], function(BlockManager, EventEmitter) {
       } else {
         this.candidate = candidate;
       }
+    },
+
+    ChannelOpened: function() {
+      return this.channelOpened;
     }
   };
 
