@@ -15,7 +15,9 @@ function Scheduler(server){
 
   // maps sequence number to status
   this.sequenceNumbers = {}
-
+  
+  // this maps a worker to the tasks that we assign it
+  this.mapWorkerToTasks = {} 
 }
 
 Scheduler.prototype = {
@@ -27,6 +29,20 @@ Scheduler.prototype = {
       newarray = arr1.splice(index,1);
     }
     return newarray;
+  }
+
+  // this function is responsible for adding a worker to the scheduler
+  AddWorker: function(worker) {
+	var tasks = [];
+	this.mapWorkerToTasks[worker] = tasks;
+  }
+
+  // this function is responsible for selecting the worker that should be assigned a task
+  // basically right now it will select the worker with the minimum amount of tasks
+  // this should be later optimized 
+  SelctWorker : function()  {
+	
+
   }
 
   // this function is responsible for removing nodes from the mapPartitiontoParent
@@ -73,10 +89,11 @@ Scheduler.prototype = {
       RemoveTask(task)
     	
   }
+  
   //iterate through all the partitions
   // finds the first one that does not have any partitions
   // this needs to be finished
-  AssignTask: function(workerId, task, partitionList) {
+  CreateTask: function(workerId, task, partitionList) {
      // code for actually assigned a workerto a given task
   
   }
@@ -137,7 +154,7 @@ function getTime() {
 }
 
 
-//this method is responsible for 
+//this method is responsible for checking that the worker is done with its task 
 function alterTime() {
    for (var key in mapWorkToTime) {
 	oldTime = mapWorkToTime[key];
