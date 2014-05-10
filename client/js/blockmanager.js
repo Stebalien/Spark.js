@@ -8,10 +8,18 @@ define([], function() {
     this.pendingGets = {};
   }
 
+  JobBlockManager.prototype.GetNow = function(id) {
+    if (id in this.localBlocks) {
+      return this.localBlocks[id];
+    }
+    return null;
+  }
+
   JobBlockManager.prototype.Get = function(id, callback) {
     // Cached locally
-    if (id in this.localBlocks) {
-      callback(this.localBlocks[id]);
+    var value = this.GetNow(id);
+    if (value) {
+      callback(value);
       return;
     }
 
