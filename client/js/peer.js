@@ -67,7 +67,7 @@ define(['blockmanager'], function(BlockManager) {
       this.init = true;
       this.socketID = data.socketID;
       this.Emit('connected', data);
-      //this.blockManager = new BlockManager(this);
+      this.blockManager = new BlockManager(this);
 
       for (var i = 0; i < this.eventHandlers.length; i++) {
         var handler = this.eventHandlers[i];
@@ -246,6 +246,30 @@ define(['blockmanager'], function(BlockManager) {
       } else if (this.connection[socketID].ChannelOpened()) {
         callback();
       }
+    },
+
+    SendMessageToPeer: function(socketID, message, callback) {
+      if (!this.connection[socketID] || !this.connection[socketID].ChannelOpened()) {
+        this.ConnectToPeer(socketID, callback);
+        return;
+      } 
+
+      this.connection[socketID].SendMessage(message, callback);
+    },
+
+    HandleMessageFromPeer: function(remoteSocketID, message) {
+      if (message.type == 'get') {
+        this.blockManager.get(message.id, function(value) {
+          this.SendMessageToPeer(remoteSocketID, {
+            seqID: message.seqID,
+            originalSender: message.senderSocketID,
+            type: 'put',
+            value: value
+          });
+        }.bind(this));
+      } else if (message.type == 'put') {
+        this.blockManager.put(message.id, message.value, message.replication);
+      }
     }
   };
 
@@ -257,6 +281,9 @@ define(['blockmanager'], function(BlockManager) {
     this.offerSent = false;
     this.remoteDescriptionSet = false;
     this.channelOpened = false;
+    this.messageQueue = [];
+    this.inFlight = {};
+    this.seqID = 1;
   }
 
   P2PConnection.prototype = {
@@ -291,10 +318,8 @@ define(['blockmanager'], function(BlockManager) {
         });
 
         this.channel = event.channel;
-        this.channel.onmessage = function (e) {
-          console.log("Got message: " + e.data);
-          this.channel.send("testmessagefrom " + this.localSocketID);
-        }.bind(this);
+        this.channelOpened = true;
+        this.channel.onmessage = this.HandleIncomingMessage.bind(this);
       }.bind(this);
     },
 
@@ -312,13 +337,11 @@ define(['blockmanager'], function(BlockManager) {
         {reliable: false}
       );
 
-      this.channel.onmessage = function (e) {
-        console.log("Got message: " + e.data);
-      }
+      this.channel.onmessage = this.HandleIncomingMessage.bind(this);
 
       this.channel.onopen = function() {
         this.channelOpened = true;
-        this.channel.send("testmessagefrom " + this.localSocketID);
+        this.SendMessage({type: 'get', id: 1});
       }.bind(this);
     },
 
@@ -375,6 +398,37 @@ define(['blockmanager'], function(BlockManager) {
 
     ChannelOpened: function() {
       return this.channelOpened;
+    },
+
+    GetChannel: function() {
+      return this.channel;
+    },
+
+    SendMessage: function(message, callback, isResponse) {
+      if (callback) {
+        this.inFlight[this.seqID] = callback;
+      }
+      if (!isResponse) {
+        message.originalSender = this.localSocketID;
+      }
+      message.seqID = this.seqID;
+      this.channelOpened && this.channel.send(JSON.stringify(message));
+      this.seqID++;
+    },
+
+    HandleIncomingMessage: function(event) {
+      console.log(event.data);
+      var message = JSON.parse(event.data);
+      var seqID = message.seqID;
+
+      // The message is a response to a message this peer sent
+      if (seqID in this.inFlight && message.originalSender == this.localSocketID) {
+        this.inFlight[seqID].callback(message);
+        delete this.inFlight[seqID];
+        return;
+      }
+
+      this.localPeer.HandleMessageFromPeer(this.remoteSocketID, message);
     }
   };
 

@@ -12,16 +12,16 @@ define(['EventEmitter'], function(EventEmitter) {
   BlockManager.prototype.get = function(id, callback) {
     // Cached locally
     if (id in this.localBlocks) {
-      callback(true, this.localBlocks[id]);
+      callback(this.localBlocks[id]);
       return;
     }
 
     // Fetch from another peer
     if (id in this.remoteBlockSocketIDs) {
-      this.peer.ConnectToPeer(this.remoteBlockSocketIDs[id], function() {
-
-        //callback(true, );
-      });
+      this.peer.SendMessageToPeer(this.remoteBlockSocketIDs[id], {
+        type: 'get',
+        id: id
+      }, callback);
       return;
     }
 
@@ -32,11 +32,17 @@ define(['EventEmitter'], function(EventEmitter) {
   };
 
   BlockManager.prototype.put = function(id, value, replication) {
+    this.localBlocks[id] = value;
 
+    if (replication && replication > 1) {
+      // TODO: replicate
+    }
   };
 
   BlockManager.prototype.delete = function(id) {
-
+    if (id in this.localBlocks) {
+      delete this.localBlocks[id];
+    }
   };
 
   return BlockManager;
