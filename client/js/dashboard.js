@@ -9,11 +9,12 @@ require.config({
   paths: {
     jquery: 'lib/jquery-2.1.0.min',
     bootstrap: 'lib/bootstrap.min',
-    EventEmitter: 'lib/EventEmitter'
+    EventEmitter: 'lib/EventEmitter',
+    underscore: 'lib/underscore'
   }
 });
 
-require(["peer", "blockmanager", "jquery", "bootstrap"], function(Peer, BlockManager, $, Bootstrap, console) {
+require(["peer", "blockmanager", "jquery", "bootstrap", "underscore"], function(Peer, BlockManager, $, Bootstrap, _, console) {
   $(document).ready(function() {
     var peer = new Peer();
     var jobList = {};

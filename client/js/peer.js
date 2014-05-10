@@ -1,4 +1,4 @@
-define(['blockmanager'], function(BlockManager) {
+define(['blockmanager', 'underscore'], function(BlockManager, _) {
 
   var PING_INTERVAL = 1000;
 
@@ -23,6 +23,7 @@ define(['blockmanager'], function(BlockManager) {
     this.socketID = null;
     this.ConnectToServer(serverURL);
     this.blockManager = new BlockManager(this);
+    this.jobs = {};
   }
 
   Peer.prototype = {
@@ -92,7 +93,27 @@ define(['blockmanager'], function(BlockManager) {
         this.blockManager.CreateJob(message.jobID);
       } else if (message.type == 'ping') {
         this.Emit('ping', message);
+        this.HandlePing(message);
       }
+    },
+
+    HandlePing: function(message) {
+      var jobs = message.alljobs;
+      var existingJobIDs = _.keys(this.jobs);
+
+      var newJobs = _.omit(jobs, existingJobIDs);
+      this.Emit('newjobs', newJobs);
+
+      var existingJobs = _.pick(jobs, existingJobIDs);
+
+      var newPeers = {};
+      for (var jobID in existingJobs) {
+        newPeers[jobID] = _.difference(existingJobs[jobID], this.jobs[jobID]);
+      }
+
+      this.Emit('newpeers', newPeers);
+
+      this.jobs = jobs;
     },
 
     Ping: function() {
