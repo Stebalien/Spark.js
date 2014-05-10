@@ -1,56 +1,90 @@
-function BlockManager(server) {
-  this.server = server;
+var _ = require('underscore');
+
+function JobBlockManager(jobID) {
+  this.jobID;
   this.blocks = {};
   this.pendingGets = {};
 }
 
-BlockManager.prototype = {
+JobBlockManager.prototype = {
   // Find out which peer is working on partitionID
-  Get: function(partitionID, socketID) {
-    var block = this.blocks[partitionID]; 
-    // Work is complete
+  Get: function(partitionID, callback) {
+    if (partitionID in this.blocks) {
+      callback(this.blocks[partitionID]);
+      return;
+    }
 
-    // Work is in progress; save request and notify when the work is complete
-    //this.pendingGets
+    if (!(partitionID in this.pendingGets)) {
+      this.pendingGets[partitionID] = [];
+    }
+
+    this.pendingGets[partitionID].push(callback);
   },
 
   // partitionID is being worked on by peer with socketID
-  Put: function(partitionID, socketID) {
-    //this.Emit('put', {partitionID: partitionID, ownerSocketID: socketID});
-  },
+  Put: function(partitionID, socketID, replication) {
+    if (!(partitionID in this.blocks)) {
+      this.blocks[partitionID] = socketID;
+    }
+    this.blocks[partitionID][socketID] = true;
 
-  Delete: function(partitionID) {
+    if (replication && replication > 1) {
+      replication -= _.size(this.blocks[partitionID]);
 
-  }
-};
-
-var statusConsts = {
-  DONE: 'done',
-  INPROGRESS: 'inprogress',
-  ASSIGNED: 'assigned',
-  UNASSIGNED: 'unassigned'
-};
-
-function Block(partitionID) {
-  this.partitionID = partitionID;
-  this.peers = {};
-}
-
-Block.prototype = {
-  AddPeer: function(socketID) {
-    this.peers[socketID] = statusConsts.ASSIGNED;
-  },
-
-  GetStatus: function() {
-    var donePeers = [];
-
-    for (var socketID in this.peers) {
-      if (this.peers[socketID] == statusConsts.DONE) {
-        donePeers.push(socketID);
+      if (replication > 1) {
+        // TODO: replicate
       }
     }
 
-    return donePeers;
+    for (var i = 0; i < this.pendingGets[partitionID].length; i++) {
+      this.pendingGets[partitionID][i](socketID);
+    }
+
+    this.pendingGets[partitionID] = [];
+  },
+
+  Delete: function(partitionID) {
+    this.deleted[partitionID] = true;
+  }
+};
+
+function BlockManager() {
+  this.jobBlockManagers = {};
+}
+
+BlockManager.prototype = {
+  JobExists: function(jobID) {
+    return jobID in this.jobBlockManagers;
+  },
+
+  CreateJob: function(jobID) {
+    this.jobBlockManagers[jobID] = new JobBlockManager(jobID);
+  },
+
+  Get: function(jobID, partitionID, callback) {
+    if (!this.JobExists(jobID)) {
+      throw new Error('BlockManager for ' + jobID + ' does not exist. Get failed.');
+    }
+
+    var blockManager = this.jobBlockManagers[jobID];
+    blockManager.Get(partitionID, callback);
+  },
+
+  Put: function(jobID, partitionID, socketID, replication) {
+    if (!this.JobExists(jobID)) {
+      throw new Error('BlockManager for ' + jobID + ' does not exist. Put failed.');
+    }
+
+    var blockManager = this.jobBlockManagers[jobID];
+    blockManager.Put(partitionID, socketID, replication);
+  },
+
+  Delete: function(jobID, partitionID) {
+    if (!this.JobExists(jobID)) {
+      throw new Error('BlockManager for ' + jobID + ' does not exist. Delete failed.');
+    }
+    var blockManager = this.jobBlockManagers[jobID];
+    blockManager.Delete(partitionID);
   }
 };
 

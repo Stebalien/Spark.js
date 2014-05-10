@@ -33,9 +33,9 @@ var server = {
   },
 
   Init: function() {
-    this.blockManager = new BlockManager(this);
     this.app = express();
     this.app.http().io();
+    this.blockManager = new BlockManager();
 
     this.app.use(express.cookieParser());
     var store = new express.session.MemoryStore();
@@ -110,14 +110,6 @@ var server = {
       this.SendToPeer(socket, req.sessionID, 'icecandidate', req.data);
     }.bind(this));
 
-    this.app.io.route('partitionrequest', function(req) {
-      this.blockManager.Get(req.data.partitionID, req.socket.id);
-    }.bind(this));
-
-    this.app.io.route('partitiondone', function(req) {
-      this.blockManager.Put(req.data.partitionID, req.socket.id);
-    }.bind(this));
-
     this.app.io.route('disconnect', function(req) {
       var peer = this.GetPeer(req.sessionID);
 
@@ -138,13 +130,18 @@ var server = {
 
     this.app.io.route('blockmanager', {
       'get': function(req) {
-      },
+        var id = req.data.id;
+        var socketID = req.socket.id;
+        var jobID = req.data.jobID;
+        this.GetBlockManager
+      }.bind(this),
+
       'put': function(req) {
-      }
-    }.bind(this));
+      }.bind(this)
+    });
 
     this.app.io.route('submit_rdd', function(req) {
-
+      // TODO: this.blockManager.CreateJob(req.data.jobID);
     });
   },
 
