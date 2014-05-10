@@ -81,7 +81,7 @@ var server = {
       res.sendfile(__dirname + '/client/master.html');
     });
 
-    this.app.get(/^\/master\/([a-z]+)$//, function(req, res) {
+    this.app.get(/^\/master\/([a-z]+)$/, function(req, res) {
       // Don't create non-existant jobs. Redirect to '/' (or just return an error).
       var jobName = req.params[0];
       // TODO: Using the session is probably not the best idea (multiple
