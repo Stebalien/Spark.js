@@ -27,7 +27,7 @@ define(['EventEmitter'], function(EventEmitter) {
 
     // Don't know where it is; ask the server
     this.peer.socket.emit('blockmanager/get', function() {
-
+      // TODO: server blockmanager
     });
   };
 

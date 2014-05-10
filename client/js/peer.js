@@ -269,6 +269,8 @@ define(['blockmanager'], function(BlockManager) {
         }.bind(this));
       } else if (message.type == 'put') {
         this.blockManager.put(message.id, message.value, message.replication);
+      } else if (message.type == 'delete') {
+        this.blockManager.delete(message.id);
       }
     }
   };
