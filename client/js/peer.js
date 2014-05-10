@@ -140,7 +140,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
 
     Emit: function(type, data) {
       data.type = type;
-      console.log(data);
+      //console.log(data);
 
       if (!(type in this.eventHandlers)) {
         return;
@@ -443,7 +443,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     },
 
     HandleIncomingMessage: function(event) {
-      console.log(event.data);
+      //console.log(event.data);
       var message = JSON.parse(event.data);
       var seqID = message.seqID;
 
