@@ -33,7 +33,6 @@ var server = {
   },
 
   Init: function() {
-    this.blockManager = new BlockManager(this);
     this.app = express();
     this.app.http().io();
 
@@ -110,14 +109,6 @@ var server = {
       this.SendToPeer(socket, req.sessionID, 'icecandidate', req.data);
     }.bind(this));
 
-    this.app.io.route('partitionrequest', function(req) {
-      this.blockManager.Get(req.data.partitionID, req.socket.id);
-    }.bind(this));
-
-    this.app.io.route('partitiondone', function(req) {
-      this.blockManager.Put(req.data.partitionID, req.socket.id);
-    }.bind(this));
-
     this.app.io.route('disconnect', function(req) {
       var peer = this.GetPeer(req.sessionID);
 
@@ -144,7 +135,9 @@ var server = {
     }.bind(this));
 
     this.app.io.route('submit_rdd', function(req) {
-
+      // TODO: var jobID = req.data.jobID;
+      // this.blockManagers[jobID] = new BlockManager(this, jobID);
+      this.blockManager = new BlockManager(this);
     });
   },
 

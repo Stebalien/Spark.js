@@ -1,56 +1,50 @@
-function BlockManager(server) {
+var _ = require('underscore');
+
+function BlockManager(server, jobID) {
   this.server = server;
+  this.jobID = jobID;
   this.blocks = {};
   this.pendingGets = {};
 }
 
 BlockManager.prototype = {
   // Find out which peer is working on partitionID
-  Get: function(partitionID, socketID) {
-    var block = this.blocks[partitionID]; 
-    // Work is complete
+  Get: function(partitionID, callback) {
+    if (partitionID in this.blocks) {
+      return this.blocks[partitionID]; 
+    }
 
-    // Work is in progress; save request and notify when the work is complete
-    //this.pendingGets
+    if (!(partitionID in this.pendingGets)) {
+      this.pendingGets[partitionID] = [];
+    }
+
+    this.pendingGets[partitionID].push(callback);
   },
 
   // partitionID is being worked on by peer with socketID
-  Put: function(partitionID, socketID) {
-    //this.Emit('put', {partitionID: partitionID, ownerSocketID: socketID});
-  },
+  Put: function(partitionID, socketID, replication) {
+    if (!(partitionID in this.blocks)) {
+      this.blocks[partitionID] = socketID;
+    }
+    this.blocks[partitionID][socketID] = true;
 
-  Delete: function(partitionID) {
+    if (replication && replication > 1) {
+      replication -= _.size(this.blocks[partitionID]);
 
-  }
-};
-
-var statusConsts = {
-  DONE: 'done',
-  INPROGRESS: 'inprogress',
-  ASSIGNED: 'assigned',
-  UNASSIGNED: 'unassigned'
-};
-
-function Block(partitionID) {
-  this.partitionID = partitionID;
-  this.peers = {};
-}
-
-Block.prototype = {
-  AddPeer: function(socketID) {
-    this.peers[socketID] = statusConsts.ASSIGNED;
-  },
-
-  GetStatus: function() {
-    var donePeers = [];
-
-    for (var socketID in this.peers) {
-      if (this.peers[socketID] == statusConsts.DONE) {
-        donePeers.push(socketID);
+      if (replication > 1) {
+        // TODO: replicate
       }
     }
 
-    return donePeers;
+    for (var i = 0; i < this.pendingGets[partitionID].length; i++) {
+      this.pendingGets[partitionID][i](socketID);
+    }
+
+    this.pendingGets[partitionID] = [];
+  },
+
+  Delete: function(partitionID) {
+    this.deleted[partitionID] = true;
   }
 };
 
