@@ -19,7 +19,7 @@ define(["underscore", "worker/cachemanager", "worker/blockmanager", "worker/rddm
          sink.collect(taskContext, function(values) {
            // Check if canceled.
            if (sinks[sink]) {
-             BlockManager.put(sink.id, values, sink.persistLevel||1);
+             BlockManager.Put(sink.id, values, sink.persistLevel||1);
            }
          });
        });
@@ -34,7 +34,7 @@ define(["underscore", "worker/cachemanager", "worker/blockmanager", "worker/rddm
     removeSink: function (id) {
       delete sinks[id];
       if (RDDManager.getPartition(id).persistLevel === 0) {
-        BlockManager.delete(id);
+        BlockManager.Delete(id);
       }
     },
     getOrCompute: function(taskContext, partition, processor) {
@@ -54,7 +54,7 @@ define(["underscore", "worker/cachemanager", "worker/blockmanager", "worker/rddm
           partition.rdd.compute(taskContext, partition, processor);
         }
       });
-      BlockManager.get(partId, false, function(values) {
+      BlockManager.Get(partId, function(values) {
         if (values instanceof Error) throw values;
         if (cancel) return; // I just went ahead an computed it...
 

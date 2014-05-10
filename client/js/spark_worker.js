@@ -3,15 +3,19 @@ define(["worker"], function(Worker) {
     Worker.prototype.constructor.call(this, isMaster ? "js/master_worker.js" : "js/slave_worker.js");
     // Block Manager
     this.register({
-      "blockmanager/get": function(key, wait, cb) {
-        peer.blockManager.get(key, wait, cb);
+      "blockmanager/GetNow": function(key, cb) {
+        peer.blockManager.GetNow(key, cb);
       },
-      "blockmanager/put": function(key, value, persist) {
-        peer.blockManager.put(key, value, persist);
+      "blockmanager/Get": function(key, cb) {
+        peer.blockManager.Get(key, cb);
+      },
+      "blockmanager/Delete": function(key) {
+        peer.blockManager.Delete(key);
+      },
+      "blockmanager/Put": function(key, value, persist) {
+        peer.blockManager.Put(key, value, persist);
       }
     });
-
-    //
   };
 
   SparkWorker.prototype = Object.create(Worker.prototype);

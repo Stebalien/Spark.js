@@ -1,7 +1,7 @@
 define(["worker/blockmanager"], function(BlockManager) {
   var CacheManager = {
     getOrCompute: function(taskContext, partition, processor) {
-      BlockManager.get(partition.id, false, function(values) {
+      BlockManager.GetNow(partition.id, function(values) {
         if (values instanceof Error) throw values;
         if (!values) {
           values = [];
@@ -10,7 +10,7 @@ define(["worker/blockmanager"], function(BlockManager) {
               values.push(item);
             },
             done: function() {
-              BlockManager.put(partition.id, values, partition.persistLevel);
+              BlockManager.Put(partition.id, values, partition.persistLevel);
               _.each(values, function(item) {
                 processor.process(item);
               });
