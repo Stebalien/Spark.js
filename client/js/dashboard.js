@@ -18,10 +18,11 @@ require(["peer", "blockmanager", "jquery", "bootstrap"], function(Peer, BlockMan
     });
 
     $('#disconnect_button').click(function() {
-      peer.Disconnect();
+      var btn = $(this);
+      peer.DisconnectFromJob(btn.data('job-id'));
       $('#volunteer_button')
-      .prop('disabled', false)
-      .button('reset');
+        .prop('disabled', false)
+        .button('reset');
 
     $('#disconnect_button')
       .prop('disabled', true);
@@ -29,11 +30,11 @@ require(["peer", "blockmanager", "jquery", "bootstrap"], function(Peer, BlockMan
 
     peer.On('added_to_job', function() {
       $('#volunteer_button')
-      .prop('disabled', true)
-      .text('Connected');
+        .prop('disabled', true)
+        .text('Connected');
 
-    $('#disconnect_button')
-      .prop('disabled', false);
+      $('#disconnect_button')
+        .prop('disabled', false);
     });
   });
 });

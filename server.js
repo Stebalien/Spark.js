@@ -81,6 +81,14 @@ var server = {
       this.SendToPeer(req.socket, req.sessionID, 'added_to_job', {jobID: roomID});
     }.bind(this));
 
+    this.app.io.route('leave_job', function(req) {
+      var jobID = req.data.jobID;
+      req.io.leave(jobID);
+      this.jobs[jobID] = this.jobs[jobID].filter(function(jobPeer) {
+        return jobPeer.sessionID != req.sessionID;
+      });
+    }.bind(this));
+
     this.app.io.route('ping', function(req) {
       server.HandlePing(req.sessionID);
       this.SendToPeer(req.socket, req.sessionID, 'ping');
