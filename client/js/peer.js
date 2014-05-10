@@ -22,6 +22,7 @@ define(['blockmanager'], function(BlockManager) {
     this.eventHandlers = {};
     this.socketID = null;
     this.ConnectToServer(serverURL);
+    this.blockManager = new BlockManager(this);
   }
 
   Peer.prototype = {
@@ -67,7 +68,6 @@ define(['blockmanager'], function(BlockManager) {
       this.init = true;
       this.socketID = data.socketID;
       this.Emit('connected', data);
-      this.blockManager = new BlockManager(this);
 
       for (var i = 0; i < this.eventHandlers.length; i++) {
         var handler = this.eventHandlers[i];
@@ -89,6 +89,7 @@ define(['blockmanager'], function(BlockManager) {
         //this.SendOffer(message);
       } else if (message.type == 'added_to_job') {
         this.Emit('added_to_job', message);
+        this.blockManager.CreateJob(message.jobID);
       } else if (message.type == 'ping') {
         this.Emit('ping', message);
       }
@@ -259,18 +260,19 @@ define(['blockmanager'], function(BlockManager) {
 
     HandleMessageFromPeer: function(remoteSocketID, message) {
       if (message.type == 'get') {
-        this.blockManager.get(message.id, function(value) {
+        this.blockManager.Get(message.jobID, message.id, function(value) {
           this.SendMessageToPeer(remoteSocketID, {
             seqID: message.seqID,
+            jobID: message.jobID,
             originalSender: message.senderSocketID,
             type: 'put',
             value: value
           });
         }.bind(this));
       } else if (message.type == 'put') {
-        this.blockManager.put(message.id, message.value, message.replication);
+        this.blockManager.put(message.jobID, message.id, message.value, message.replication);
       } else if (message.type == 'delete') {
-        this.blockManager.delete(message.id);
+        this.blockManager.delete(message.jobID, message.id);
       }
     }
   };

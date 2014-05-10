@@ -57,7 +57,7 @@ BlockManager.prototype = {
     return jobID in this.jobBlockManagers;
   },
 
-  Create: function(jobID) {
+  CreateJob: function(jobID) {
     this.jobBlockManagers[jobID] = new JobBlockManager(jobID);
   },
 
@@ -70,7 +70,7 @@ BlockManager.prototype = {
     blockManager.Get(partitionID, callback);
   },
 
-  Put: function(partitionID, socketID, replication) {
+  Put: function(jobID, partitionID, socketID, replication) {
     if (!this.JobExists(jobID)) {
       throw new Error('BlockManager for ' + jobID + ' does not exist. Put failed.');
     }
@@ -79,7 +79,7 @@ BlockManager.prototype = {
     blockManager.Put(partitionID, socketID, replication);
   },
 
-  Delete: function(partitionID) {
+  Delete: function(jobID, partitionID) {
     if (!this.JobExists(jobID)) {
       throw new Error('BlockManager for ' + jobID + ' does not exist. Delete failed.');
     }

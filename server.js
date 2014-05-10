@@ -35,6 +35,7 @@ var server = {
   Init: function() {
     this.app = express();
     this.app.http().io();
+    this.blockManager = new BlockManager();
 
     this.app.use(express.cookieParser());
     var store = new express.session.MemoryStore();
@@ -132,7 +133,7 @@ var server = {
         var id = req.data.id;
         var socketID = req.socket.id;
         var jobID = req.data.jobID;
-        this.blockManager
+        this.GetBlockManager
       }.bind(this),
 
       'put': function(req) {
@@ -140,9 +141,7 @@ var server = {
     });
 
     this.app.io.route('submit_rdd', function(req) {
-      // TODO: var jobID = req.data.jobID;
-      // this.blockManagers[jobID] = new BlockManager(this, jobID);
-      this.blockManager = new BlockManager(this);
+      // TODO: this.blockManager.CreateJob(req.data.jobID);
     });
   },
 
