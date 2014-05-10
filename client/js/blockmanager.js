@@ -32,6 +32,8 @@ define(['EventEmitter'], function(EventEmitter) {
   };
 
   BlockManager.prototype.put = function(id, value, replication) {
+    // If doing a put after fetching from another peer, should possibly notify 
+    // server that this peer has this block
     this.localBlocks[id] = value;
 
     if (replication && replication > 1) {

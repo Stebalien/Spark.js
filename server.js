@@ -136,6 +136,13 @@ var server = {
       delete peer;
     }.bind(this));
 
+    this.app.io.route('blockmanager', {
+      'get': function(req) {
+      },
+      'put': function(req) {
+      }
+    }.bind(this));
+
     this.app.io.route('submit_rdd', function(req) {
 
     });
