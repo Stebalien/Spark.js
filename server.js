@@ -21,6 +21,14 @@ var server = {
     this.sockets[socket.id] = socket;
   },
 
+  CreatePingData: function(peer) {
+    var jobIDs = _.pluck(this.jobs, 'id');
+    var jobPeerIDs = _.invoke(this.jobs, 'GetPeerIds');
+    return {
+      alljobs: _.object(jobIDs, jobPeerIDs)
+    };
+  },
+
   GetPeer: function(sessionID) {
     return this.peers[sessionID];
   },
@@ -90,7 +98,8 @@ var server = {
 
     this.app.io.route('ping', function(req) {
       server.HandlePing(req.sessionID);
-      this.SendToPeer(req.socket, req.sessionID, 'ping');
+      var peer = this.GetPeer(req.sessionID);
+      this.SendToPeer(req.socket, req.sessionID, 'ping', this.CreatePingData(peer));
     }.bind(this));
 
     this.app.io.route('offer', function(req) {
@@ -277,6 +286,10 @@ Job.prototype = {
 
   GetPeers: function() {
     return this.volunteers;
+  },
+
+  GetPeerIds: function() {
+    return _.pluck(this.volunteers, 'id');
   }
 };
 
