@@ -25,12 +25,15 @@ require.config({
   }
 });
 
-require(["underscore", "jquery", "console", "spark_worker", "util", "mastertaskmanager"],
-function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskManager) {
+require(["underscore", "jquery", "console", "spark_worker", "util", "mastertaskmanager", "peer"],
+function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskManager, Peer) {
+
+  var peer = new Peer();
+  var taskManager = new MasterTaskManager(peer);
 
   $(document).ready(function() {
     var c = new Console($(".repl"));
-    var worker = new SparkWorker(true);
+    var worker = new SparkWorker(peer, true);
 
     var promisedLogLines = [];
     worker.register({
@@ -41,7 +44,7 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
         promisedLogLines[id](obj);
       },
       "submitTask": function(rdds, targets) {
-        MasterTaskManager.submitTask(rdds, targets);
+        taskManager.submitTask(rdds, targets);
       }
     });
     c.on('exec', function() {
@@ -52,7 +55,7 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
         switch(status) {
           case "success":
             c.displayCode(text);
-            MasterTaskManager.recordCode(text);
+            taskManager.recordCode(text);
             c.setText("");
             break;
           case "invalid_syntax":
@@ -61,7 +64,7 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
           case "error":
             c.displayCode(text);
             c.setText("");
-            MasterTaskManager.recordCode(text);
+            taskManager.recordCode(text);
             c.displayError(error);
         }
         c.unlock()

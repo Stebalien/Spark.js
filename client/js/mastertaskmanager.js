@@ -1,21 +1,21 @@
 // TODO: Sign up as master (not slave)
-define(["peer"], function(peer) {
-  var cachedCode = "";
+define(function() {
+  function MasterTaskManager(peer) {
+    this.cachedCode = "";
+    this.peer = peer;
+  };
 
-  function submitTask(rdds, targets) {
-    peer.submitTask({
-      code: cachedCode,
+  MasterTaskManager.prototype.submitTask = function submitTask(rdds, targets) {
+    this.peer.submitTask({
+      code: this.cachedCode,
       rdds: rdds,
       targets: targets
     });
-    cachedCode = "";
+    this.cachedCode = "";
   };
 
-  function recordCode(code) {
-    cachedCode += "try {\n" + code + "\n} catch (_ignore_) { };\n";
+  MasterTaskManager.prototype.recordCode = function recordCode(code) {
+    this.cachedCode += "try {\n" + code + "\n} catch (_ignore_) { };\n";
   };
-  return {
-    recordCode: recordCode,
-    submitTask: submitTask
-  };
+  return MasterTaskManager;
 });

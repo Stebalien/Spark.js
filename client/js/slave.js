@@ -26,9 +26,10 @@ require.config({
 });
 
 require(["underscore", "jquery", "console", "spark_worker", "util", "peer"],
-function(_,             $      ,  Console,   SparkWorker ,   util,   peer) {
+function(_,             $      ,  Console,   SparkWorker ,   util,   Peer) {
   // TODO: Multiple workers.
-  var w = new SparkWorker(false); // Slave
+  var peer = new Peer();
+  var w = new SparkWorker(peer, false); // Slave
   peer.On("new_task", function(task) {
     w.call("schedule", task);
   });
