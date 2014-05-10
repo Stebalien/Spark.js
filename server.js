@@ -50,6 +50,7 @@ var server = {
       this.SendReliable(socket, {type: 'connected', socketID: socket.id});
     }.bind(this));
 
+    this.app.use('/', express.static(__dirname + '/client/js'));
     this.app.use('/client', express.static(__dirname + '/client'));
     this.app.use('/static', express.static(__dirname + '/'));
  
