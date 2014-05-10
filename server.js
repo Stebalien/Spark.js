@@ -129,10 +129,10 @@ var server = {
 
     this.app.io.route('blockmanager', {
       'get': function(req) {
-      },
+      }.bind(this),
       'put': function(req) {
-      }
-    }.bind(this));
+      }.bind(this)
+    });
 
     this.app.io.route('submit_rdd', function(req) {
       // TODO: var jobID = req.data.jobID;
