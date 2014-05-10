@@ -1,4 +1,11 @@
 require.config({
+  shim: {
+    bootstrap: {
+      deps: ['jquery'],
+      exports: '$.fn.button'
+    }
+  },
+
   paths: {
     jquery: 'lib/jquery-2.1.0.min',
     bootstrap: 'lib/bootstrap.min',
@@ -24,14 +31,18 @@ require(["peer", "blockmanager", "jquery", "bootstrap"], function(Peer, BlockMan
         .prop('disabled', false)
         .button('reset');
 
-    $('#disconnect_button')
-      .prop('disabled', true);
+      $('.peer-list').addClass('hidden');
+
+      $('#disconnect_button')
+        .prop('disabled', true);
     });
 
     peer.On('added_to_job', function() {
       $('#volunteer_button')
         .prop('disabled', true)
         .text('Connected');
+
+      $('.peer-list').removeClass('hidden');
 
       $('#disconnect_button')
         .prop('disabled', false);
