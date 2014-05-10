@@ -79,7 +79,6 @@ var server = {
     this.app.get(/^(\/)([a-z]+)$/, function(req, res) {
       var jobName = req.params[1];
       req.session.room = jobName;
-      server.AddNewPeer(req.sessionID, jobName);
       res.sendfile(__dirname + '/index.html');
     });
 
