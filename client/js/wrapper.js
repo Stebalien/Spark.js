@@ -1,3 +1,0 @@
-require(["rdd", "api", "underscore"], function(RDD, _null_, _) {
-  // TODO: Wrap user submitted code...
-});
