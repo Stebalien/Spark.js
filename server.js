@@ -113,7 +113,7 @@ var server = {
 
       req.session.peerJobID = peerJobID;
 
-      res.sendfile(__dirname + '/client/slave.html');
+      res.sendfile(__dirname + '/client/peer.html');
     }.bind(this));
 
     this.app.io.route('volunteer', function(req) {
