@@ -4,7 +4,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
 
   var servers = {
     iceServers: [{
-      url: 'turn:http://localhost:5000'
+      url: 'turn:'+location.origin
     }]
   };
 
@@ -14,7 +14,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     }]
   };
 
-  var serverURL = 'http://localhost:5000';
+  var serverURL = location.origin;
 
   function Peer() {
     this.socket = null;
@@ -62,7 +62,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       // Notify server that message has been received
       ack && ack();
 
-      this.Ping();
+      this.Volunteer();
       if (this.init) {
         return;
       }
@@ -90,10 +90,28 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         //this.SendOffer(message);
       } else if (message.type == 'added_to_job') {
         this.Emit('added_to_job', message);
+        console.log(message);
+        this.jobID = message.jobID;
+        this.Ping();
       } else if (message.type == 'ping') {
         this.Emit('ping', message);
         this.HandlePing(message);
       }
+    },
+
+    HandleAddedToJob: function(message) {
+      this.jobID = message.jobID;
+      if (message.peerID) {
+        this.peerID = message.peerID;
+      }
+    },
+
+    GetPeerID: function() {
+      return this.peerID;
+    },
+
+    IsMaster: function() {
+      return this.jobID && this.peerID;
     },
 
     HandlePing: function(message) {
@@ -142,6 +160,9 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     },
 
     Emit: function(type, data) {
+      if (!data) {
+        data = {};
+      }
       data.type = type;
       //console.log(data);
 
@@ -183,12 +204,12 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       this.afterInitConnectedCallback = callback;
     },
 
-    Volunteer: function(jobID) {
+    Volunteer: function() {
       if (!this.socket.socket.connected) {
         this.ConnectToServer(serverURL);
       }
-      this.socket.emit('volunteer', {jobID: jobID});
-      this.Emit('volunteer', {jobID: jobID});
+      this.socket.emit('volunteer');
+      this.Emit('volunteer');
     },
 
     SendOffer: function(socketID) {

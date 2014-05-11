@@ -1,6 +1,7 @@
 var express = require('express.io');
 var url = require('url');
 var BlockManager = require('./blockmanager.js');
+var ConsoleLog = require('./consolelog.js');
 var _ = require('underscore');
 var crypto = require('crypto');
 
@@ -12,6 +13,7 @@ var server = {
   app: null,
   eventHandlers: {},
   blockManager: null,
+  consoleLog: null,
 
   AddNewPeer: function(sessionID, jobID, socket) {
     var peer = new Peer(sessionID, jobID, socket);
@@ -57,6 +59,7 @@ var server = {
     this.app = express();
     this.app.http().io();
     this.blockManager = new BlockManager();
+    this.consoleLog = new ConsoleLog();
 
     this.app.use(express.cookieParser());
     var store = new express.session.MemoryStore();
@@ -95,6 +98,7 @@ var server = {
         res.redirect('/');
         return;
       }
+      req.session.sessionID = jobID;
       res.sendfile(__dirname + '/client/master.html');
     }.bind(this));
 
@@ -106,14 +110,28 @@ var server = {
         return;
       }
 
-      var job = this.peerJobs[peerJobID];
+      req.session.peerJobID = peerJobID;
+
+      res.sendfile(__dirname + '/client/slave.html');
+    }.bind(this));
+
+    this.app.io.route('volunteer', function(req) {
+      var job;
+      var data = {};
+      if (req.session.jobID) {
+        job = this.jobs[req.session.jobID];
+        data.peerJobID = job.peerID;
+      } else if (req.session.peerJobID) {
+        job = this.peerJobs[req.session.peerJobID];
+      }
+
+      data.jobID = job.id;
+
       var socketID = req.socket.id;
       this.AddNewPeer(req.sessionID, job.id, req.socket);
       req.io.join(job.id);
       this.Broadcast(req.io.room(job.id), 'new_peer', {socketID: socketID});
-      this.SendToPeer(req.socket, req.sessionID, 'added_to_job', {jobID: job.id});
-
-      res.sendfile(__dirname + '/client/slave.html');
+      this.SendToPeer(req.socket, req.sessionID, 'added_to_job', data);
     }.bind(this));
 
     this.app.io.route('leave_job', function(req) {
@@ -170,6 +188,18 @@ var server = {
       delete this.sockets[peer.socketID];
       delete peer;
     }.bind(this));
+
+    this.app.io.route('consolelog', {
+      'record': function(req) {
+        var jobID = req.data.jobID || req.session.jobID;
+        this.consoleLog.Record(jobID, req.data.entry);
+      }.bind(this),
+
+      'replay': function(req) {
+        var jobID = req.data.jobID || req.session.jobID;
+        req.io.respond(this.consoleLog.Replay(jobID));
+      }.bind(this)
+    });
 
     this.app.io.route('blockmanager', {
       'get': function(req) {

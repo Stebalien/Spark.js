@@ -30,43 +30,49 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
 
   var peer = new Peer();
   var taskManager = new MasterTaskManager(peer);
-
-  $(document).ready(function() {
-    var c = new Console($(".repl"));
-    var worker = new SparkWorker(peer, true);
-
-    worker.register({
-      "console/promiseResult": function(id, type) {
-        c.promiseResult(id, type);
-      },
-      "console/fulfillResult": function(id, obj, type) {
-        c.fulfillResult(id, obj, type);
-      },
-      "submitTask": function(id, rdds, targets) {
-        taskManager.submitTask(id, rdds, targets);
-      }
-    });
-    c.on('exec', function() {
-      c.lock();
-      var text = c.getText();
-      worker.call("exec", util.toURL(text), function(status, error) {
-        c.clearError();
-        switch(status) {
-          case "success":
-            c.displayCode(text);
-            taskManager.recordCode(text);
-            c.setText("");
-            break;
-          case "invalid_syntax":
-            c.setError(error);
-            break;
-          case "error":
-            c.displayCode(text);
-            c.setText("");
-            taskManager.recordCode(text);
-            c.displayError(error);
+  peer.socket.emit('consolelog:replay', {jobID: peer.jobID}, function(logItems) {
+    $(document).ready(function() {
+      var c = new Console($(".repl"), logItems);
+      var worker = new SparkWorker(peer, true);
+      worker.register({
+        "console/promiseResult": function(id, type) {
+          c.promiseResult(id, type);
+        },
+        "console/fulfillResult": function(id, obj, type) {
+          c.fulfillResult(id, obj, type);
+        },
+        "submitTask": function(id, rdds, targets) {
+          taskManager.submitTask(id, rdds, targets);
         }
-        c.unlock()
+      });
+      c.on('append', function(item) {
+        peer.socket.emit('consolelog:record', {
+          jobID: peer.jobID,
+          entry: item
+        });
+      });
+      c.on('exec', function() {
+        c.lock();
+        var text = c.getText();
+        worker.call("exec", util.toURL(text), function(status, error) {
+          c.clearError();
+          switch(status) {
+            case "success":
+              c.displayCode(text);
+              taskManager.recordCode(text);
+              c.setText("");
+              break;
+            case "invalid_syntax":
+              c.setError(error);
+              break;
+            case "error":
+              c.displayCode(text);
+              c.setText("");
+              taskManager.recordCode(text);
+              c.displayError(error);
+          }
+          c.unlock()
+        });
       });
     });
   });
