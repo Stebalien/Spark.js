@@ -242,14 +242,16 @@ Scheduler.prototype = {
 	// it is initalize with the sources
         nodeQueue = this.FindSources();
 	// this is useful for the map of nodes explored 
-	mapNodesExplored = {}
-	while (nodeQueue.length == 0) {
+	console.log("the nodeQueue is", nodeQueue);
+        mapNodesExplored = {}
+	while (nodeQueue.length != 0) {
 		sources = [];
 		sinks = [];
 		node = nodeQueue[0];
+		this.RemoveFromArray(nodeQueue,node);
 		while (true) {
-		   children = mapPartitionToChildren[node];
-		   numChildren = children.lengh;
+		   children = this.mapPartitionToChildren[node];
+		   numChildren = children.length;
 		   if (node in mapNodeToChildrenExplored) {
 			//this is a split node
 			// this has been computed by somebody else so we make it a source
@@ -269,7 +271,7 @@ Scheduler.prototype = {
 		   else {
 			 if (numChildren == 0) {
 			   // we are a sink as we are the end target
-			   sink.push(node);
+			   sinks.push(node);
 			   break;
 			 }
 			 else if (numChildren == 1) {
@@ -288,8 +290,8 @@ Scheduler.prototype = {
 			}
 		  }
 		  // we need to check that the node we are exploring is not a join
-		  parents = mapPartitionToParent[node];
-		  numParents  = mapPartitionToParent[newNode].length;
+		  parents = this.mapPartitionToParent[node];
+		  numParents  = parents.length;
 		  if (numParents > 1) {
 			//this is a join
 	          	if (newNode in  mapNodesExplored) {
@@ -317,10 +319,9 @@ Scheduler.prototype = {
 	      }
 	      // creating a new task,assigning it, and removing the old node from the queue 
 	      var task = new Task(sources,sinks);
-	      worker = SelctWorker();
+	      worker = this.SelctWorker();
 	      console.log("we created this task",task);
-              AssignWorker(worker,task);
-	      RemoveFromArray(nodeQueue, node);
+              this.AssignWorker(worker,task);
 	}
 	console.log("finished with this method") 
   },
