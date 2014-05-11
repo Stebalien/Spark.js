@@ -30,13 +30,17 @@ define([
         extraKeys: {
           "Ctrl-Space": "autocomplete",
           "Ctrl-Enter": function() {
-            that.emit("exec");
+            if (that.getText() !== "") {
+              that.emit("exec");
+            }
           }
         }
       }
     );
     element.find(".run-btn").on("click", function() {
-      that.emit("exec");
+      if (that.getText() !== "") {
+        that.emit("exec");
+      }
     });
   };
 
@@ -57,7 +61,7 @@ define([
     this._error.hide();
   };
   Console.prototype.getText = function() {
-    return this._entry.getValue();
+    return this._entry.getValue().trim();
   };
   Console.prototype.setText = function(text) {
     return this._entry.setValue("");
