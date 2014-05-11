@@ -287,8 +287,9 @@ Scheduler.prototype = {
 // the sink is the last partition to analyze
 // the nodes is a list of partitions for the worker to analyze
     
-function Task(sources, sink) 
+function Task(sources, sinks) {
   this.sources = sources;
-  this.sink = sink; 
+  this.sinks = sink; 
+}
 </script>
 </head>
