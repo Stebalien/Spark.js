@@ -146,10 +146,12 @@ Scheduler.prototype = {
   // it is using a bfs based approach so that the tasks closer to the start get started first 
   GenerateTask : function() {
 	// this is the map of a partition to the number of children of it we have explored
-	// this is useful so we know what a map has to be 
+	// this is useful so we know what a map has to be; this is useful for split 
 	mapNodeToChildrenExplored = {}	
 	// this is basically the queue that we need to process
         nodeQueue
+	// this is useful for the map of nodes explored 
+	mapNodesExplored = {}
 	for (nodeQueue.length == 0) {
 		sources = [];
 		sinks = [];
@@ -158,7 +160,16 @@ Scheduler.prototype = {
 		   children = mapPartitionToChildren[node];
 		   numChildren = children.lengh;
 		   if node in mapNodeToChildrenExplored {
-			// this means that we probably have a new source 
+			// this has been computed by somebody else so we make it a source
+			sources.push(node);
+			int count = mapNodeToChildrenExplored[node];
+			if (count < children.length) {
+				newNode = children[count];
+				mapNodeToChildrenExplored [node] +=1; 
+				if (count + 1 != children.length) [
+					nodeQueue.push(node);
+				}	
+			}  
 		   }	  
 		   else {
 			 if (numChildren == 0) {
@@ -168,7 +179,7 @@ Scheduler.prototype = {
 			 }
 			 else if (numChildren == 1) {
 			 // we have just one child so keep traversing
-			 node = children[0];
+			  newNode = children[0];
 			}
 			else {
 			  // we have more then one node and thus we have a split
@@ -176,18 +187,42 @@ Scheduler.prototype = {
 			  sinks.push(node);
 			  // push the node back on the queue because we are going to have to use it again
 			  nodeQueue.push(node); 
-                          // the map needs to be updated  
+                          // the map needs to be updated
 			  mapNodeToChildrenExplored[node] = 1; 
-			  node = children[0];
+			  newNode = children[0];
 			}
-			// we need to check that the node we are exploring
-		   }
-		}
-		// creating a new task,assigning it, and removing the old node from the queue 
-		var task = new Task(sources,sinks);
-	        worker = SelctWorker();
-		AssignWorker(worker,task);
-		nodeQueue = RemoveFromArray(nodeQueue, node);yy
+		  }
+		  // we need to check that the node we are exploring is not a join
+		  parents = mapPartitionToParent[node];
+		  numParents  = mapPartitionToParent[newNode].length;
+		  if (numParents > 1) {
+	          	if (newNode in  mapNodesExplored) {
+			//we are not the first child in the join
+			 this.sink.push(node);
+			  break;
+		    	}
+			else {
+			      // we are the first one in the array
+			      // so we make all of the siblings sources to ensure
+			      // that we wait for them
+			     for (int i = 1; i < parents.length; i++) {
+			       sources.push(parents[i]);
+			     }
+			     mapNodesExplored[newNode] = 1;
+			     node = newNode;  
+		
+			}
+		 }
+		 else {
+		    node = newNode;
+		 }
+		   
+	      }
+	      // creating a new task,assigning it, and removing the old node from the queue 
+	      var task = new Task(sources,sinks);
+	      worker = SelctWorker();
+	      AssignWorker(worker,task);
+	      nodeQueue = RemoveFromArray(nodeQueue, node);yy
 	} 
   } 
  
