@@ -97,6 +97,9 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     },
 
     HandlePing: function(message) {
+      if (!this.jobID && message.jobID) {
+        this.jobID = message.jobID;
+      }
       var jobs = message.alljobs;
       var existingJobIDs = _.keys(this.jobs);
 
@@ -295,6 +298,15 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         this.blockManager.put(message.id, message.value, message.replication);
       } else if (message.type == 'delete') {
         this.blockManager.delete(message.id);
+      } else if (message.type == 'getnow') {
+        this.blockManager.GetNow(message.id, function(value) {
+          this.SendMessageToPeer(remoteSocketID, {
+            seqID: message.seqID,
+            originalSender: message.senderSocketID,
+            type: 'put',
+            value: value
+          });
+        }.bind(this));
       }
     }
   };

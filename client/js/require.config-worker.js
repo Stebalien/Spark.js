@@ -9,8 +9,8 @@ require.config({
     },
   },
   paths: {
-    underscore: 'lib/underscore',
-    "underscore.string": 'lib/underscore.string',
-    EventEmitter: 'lib/EventEmitter'
+    underscore: '/js/lib/underscore',
+    "underscore.string": '/js/lib/underscore.string',
+    EventEmitter: '/js/lib/EventEmitter'
   }
 });

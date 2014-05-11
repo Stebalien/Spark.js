@@ -1,6 +1,6 @@
 define(["worker"], function(Worker) {
   function SparkWorker(peer, isMaster) {
-    Worker.prototype.constructor.call(this, isMaster ? "js/master_worker.js" : "js/slave_worker.js");
+    Worker.prototype.constructor.call(this, isMaster ? "/js/master_worker.js" : "/js/slave_worker.js");
     // Block Manager
     this.register({
       "blockmanager/GetNow": function(key, cb) {

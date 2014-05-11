@@ -5,8 +5,9 @@ define(function() {
     this.peer = peer;
   };
 
-  MasterTaskManager.prototype.submitTask = function submitTask(rdds, targets) {
+  MasterTaskManager.prototype.submitTask = function submitTask(id, rdds, targets) {
     this.peer.submitTask({
+      id: id,
       code: this.cachedCode,
       rdds: rdds,
       targets: targets

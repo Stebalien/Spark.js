@@ -1,4 +1,4 @@
-define(["underscore", "util", "worker/master", "worker/rddmanager", "worker/goalmanager"], function(_, util, Master, RDDManager, GoalManager) {
+define(["underscore", "util", "worker/task", "worker/rddmanager", "worker/goalmanager"], function(_, util, Task, RDDManager, GoalManager) {
   var idCounter = 0;
 
   function setattr(obj, name, fn) {
@@ -168,29 +168,21 @@ define(["underscore", "util", "worker/master", "worker/rddmanager", "worker/goal
   });
 
   if (self.isMaster) {
-    RDD.extend("_submit", function() {
-      var that = this;
-      // Defer this so that the code finishes evaluating first. (So we include the code when we submit.
-      // Major hackage...
-      _.defer(function() {
-        Master.submit(that.partitions);
-      });
-      return this;
-    });
     RDD.extend("_collect", function(callback) {
-      // Do the actual coalesce on this node (submit the parent).
-      // XXX: Cyclic dependency. Not a real problem but still grrr...
-      var taskContext = {
-        sources: _.object(_.pluck(this.partitions, "id"), _.map(this.partitions, _.constant(true)))
-      };
-      this._submit().coalesce(1).partitions[0].collect(taskContext, function(values) {
-        callback(values);
-      });
+      var task = new Task(this);
+      if (task.expired) {
+        callback(null);
+      } else {
+        _.defer(function() { task.submit(); });
+        task.collect(function(values) {
+          callback(values);
+        });
+      }
+      return task.id;
     });
   } else {
     // Nop these on the client.
     RDD.extend("_collect", function(callback) {});
-    RDD.extend("_submit", function(callback) {});
   }
 
   var partitionCache = [];
