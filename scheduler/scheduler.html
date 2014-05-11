@@ -141,8 +141,55 @@ Scheduler.prototype = {
       this.mapWorkToTime[workerId] = currentTime
       this.mapWorkerToTasks[workerId] = RemoveFromArray(this.mapWorkerToTasks[workerId], taks);	
   }
- 
-  GenerateTask :   
+  
+  // this function is responsible for generating the tasks and assigning them
+  // it is using a bfs based approach so that the tasks closer to the start get started first 
+  GenerateTask : function() {
+	// this is the map of a partition to the number of children of it we have explored
+	// this is useful so we know what a map has to be 
+	mapNodeToChildrenExplored = {}	
+	// this is basically the queue that we need to process
+        nodeQueue
+	for (nodeQueue.length == 0) {
+		sources = [];
+		sinks = [];
+		node = nodeQueue[0];
+		for {
+		   children = mapPartitionToChildren[node];
+		   numChildren = children.lengh;
+		   if node in mapNodeToChildrenExplored {
+			// this means that we probably have a new source 
+		   }	  
+		   else {
+			 if (numChildren == 0) {
+			   // we are a sink as we are the end target
+			   sink.push(node);
+			   break;
+			 }
+			 else if (numChildren == 1) {
+			 // we have just one child so keep traversing
+			 node = children[0];
+			}
+			else {
+			  // we have more then one node and thus we have a split
+			  //mark this node as a sink
+			  sinks.push(node);
+			  // push the node back on the queue because we are going to have to use it again
+			  nodeQueue.push(node); 
+                          // the map needs to be updated  
+			  mapNodeToChildrenExplored[node] = 1; 
+			  node = children[0];
+			}
+			// we need to check that the node we are exploring
+		   }
+		}
+		// creating a new task,assigning it, and removing the old node from the queue 
+		var task = new Task(sources,sinks);
+	        worker = SelctWorker();
+		AssignWorker(worker,task);
+		nodeQueue = RemoveFromArray(nodeQueue, node);yy
+	} 
+  } 
  
   // this method is responsible for checking that the worker is done with its task 
   // if it is not done in a reasonable time, then we reassign its tasks to someone else
