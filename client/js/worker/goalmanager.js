@@ -1,4 +1,4 @@
-define(["underscore", "worker/cachemanager", "worker/blockmanager", "worker/rddmanager"], function(_, CacheManager, BlockManager, RDDManager) {
+define(["underscore", "worker/blockmanager", "worker/rddmanager"], function(_, BlockManager, RDDManager) {
   var waiting = {};
   var sinks = {};
 
@@ -24,12 +24,6 @@ define(["underscore", "worker/cachemanager", "worker/blockmanager", "worker/rddm
          });
        });
     },
-    // Used to punch through a source on this slave when another slave dies.
-    removeSource: function(id) {
-      var waitingList = waiting[id];
-      delete waiting[id];
-      _.each(waitingList, function(fn) { fn(); }); // No longer a source. Just compute it.
-    },
     // Garbage Collection
     removeSink: function (id) {
       delete sinks[id];
@@ -38,25 +32,8 @@ define(["underscore", "worker/cachemanager", "worker/blockmanager", "worker/rddm
       }
     },
     getOrCompute: function(taskContext, partition, processor) {
-      var partId = partition.id;
-      var waitingList = waiting[partId];
-      var cancel = false;
-      if (!waitingList) {
-        waitingList = waiting[partId] = [];
-      }
-      waitingList.push(function() {
-        cancel = true;
-        // I shouln't find it but I might need to cache it!
-        if (rdd.persistLevel > 0) {
-          // Try to get it from the cache.
-          CacheManager.getOrCompute(taskContext, partition, processor);
-        } else {
-          partition.rdd.compute(taskContext, partition, processor);
-        }
-      });
-      BlockManager.Get(partId, function(values) {
+      BlockManager.Get(partition.id, function(values) {
         if (values instanceof Error) throw values;
-        if (cancel) return; // I just went ahead an computed it...
 
         // TODO: Cleanup intermediates.
         _.each(values, function(item) {

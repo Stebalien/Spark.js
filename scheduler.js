@@ -23,7 +23,6 @@ Scheduler.prototype = {
           level: level,
           isSink: false,
           refcount: 0,
-          persist: partitionDesc.persist,
           reduced: partitionDesc.reduced,
           children: _.values(_.pick(that.partitions, partitionDesc.dependencies)),
           parents: []
@@ -73,10 +72,6 @@ Scheduler.prototype = {
       var node = sink;
       while (node.children.length > 0) {
         _.each(_.rest(node.children), function(s) {
-          if (that.IsPersisted(s)) {
-            // Drop it.
-            return;
-          }
           if (!s.isSink) {
             s.isSink = true;
             var assigned = assignments[s.id];
@@ -91,10 +86,6 @@ Scheduler.prototype = {
         });
         node = node.children[0]; // Guarenteed by loop condition.
 
-        // Move on.
-        if (that.IsPersisted(node)) {
-          break;
-        }
         if (node.isSink) {
           node.refcount++;
           cut.sources.push(node);
@@ -125,9 +116,6 @@ Scheduler.prototype = {
       }
     }
     return cuts;
-  },
-  IsPersisted: function(partition) {
-    return partition.persist > 0 && partition.id in this.server.blockManager.blocks;
   }
 };
 

@@ -2,6 +2,16 @@ define(["underscore", "worker/rpc", "worker/rddmanager"], function(_, rpc, RDDMa
   var nextTaskId = 0;
   var nextRDD = 0;
 
+  function getTargets(partition) {
+    return _.flatten(_.map(partition.dependencies, function(p) {
+      var parts = getTargets(p);
+      if (part.rdd.persistLevel && part.rdd.persistLevel > 0) {
+        parts.push(p.id);
+      }
+      return parts;
+    }));
+  }
+
   function Task(rdd) {
     this.rdd = rdd;
     this.submitted = false;
@@ -22,7 +32,11 @@ define(["underscore", "worker/rpc", "worker/rddmanager"], function(_, rpc, RDDMa
     if (this.submitted) return;
     this.submitted = true;
 
-    var targets = _.pluck(this.rdd.partitions, "id");
+    var targets = [];
+    Array.prototype.push.apply(targets, _.flatten(_.map(this.rdd.partitions, getTargets)));
+    if (!this.rdd.persistLevel) {
+      Array.prototype.push.apply(targets, _.pluck(this.rdd.partitions, "id"));
+    }
     var rdds = [];
     var rdd;
     while (rdd = RDDManager.getRDD(nextRDD)) {
@@ -30,7 +44,6 @@ define(["underscore", "worker/rpc", "worker/rddmanager"], function(_, rpc, RDDMa
       rdds.push(_.map(rdd.partitions, function(part) {
         return {
           id: part.id,
-          persist: rdd.persistLevel,
           reduced: rdd.reducing,
           dependencies: _.pluck(part.dependencies, "id")
         };

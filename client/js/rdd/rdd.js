@@ -150,9 +150,6 @@ define(["underscore", "util", "worker/task", "worker/rddmanager", "worker/goalma
       if (taskContext.sources[partition.id]) {
         // Someone elses problem (probably!).
         GoalManager.getOrCompute(taskContext, partition, intermediate);
-      } else if (this.persistLevel > 0) {
-        // Try to get it from the cache.
-        CacheManager.getOrCompute(taskContext, partition, intermediate);
       } else {
         // Just compute it.
         this.__description__.compute(taskContext, partition, intermediate);
