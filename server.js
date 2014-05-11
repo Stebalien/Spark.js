@@ -2,23 +2,36 @@ var express = require('express.io');
 var url = require('url');
 var BlockManager = require('./blockmanager.js');
 var _ = require('underscore');
+var crypto = require('crypto');
 
 var server = {
   peers: {},
   jobs: {},
+  peerJobs: {},
   sockets: {},
   app: null,
   eventHandlers: {},
   blockManager: null,
 
-  AddNewPeer: function(sessionID, jobID, socket) {
+  AddNewPeer: function(sessionID, job, socket) {
     var peer = new Peer(sessionID, jobID, socket);
     this.peers[sessionID] = peer;
-    if (!(jobID in this.jobs)) {
-      this.jobs[jobID] = new Job('testname');
-    }
-    this.jobs[jobID].AddPeer(peer);
     this.sockets[socket.id] = socket;
+  },
+
+  AddJob: function() {
+    var job = new Job();
+    this.jobs[job.id] = job;
+    this.peerJobs[job.peerID] = job;
+    return job;
+  },
+
+  JobExists: function(jobID) {
+    return jobID in this.jobs; 
+  },
+
+  JobExistsForPeer: function(peerJobID) {
+    return peerJobID in this.peerJobs;
   },
 
   CreatePingData: function(peer) {
@@ -74,42 +87,39 @@ var server = {
     // Client should access this route to submit a new RDD
     this.app.get('/', function(req, res) {
       req.session.start = new Date().toString();
-      // TODO: Create Job Here
-      // Assign both master id and slave id (we can just use SHA256(masterId)
-      // as the slave id).
-      // Redirect to /master/masterJobId.html
+      var job = this.AddJob();
+      // TODO: display peer id somewhere
+      this.blockManager.CreateJob(job.id);
+      res.redirect('/master/' + job.id);
+    }.bind(this));
+
+    this.app.get(/^\/master\/([a-z0-9]+)$/, function(req, res) {
+      var jobID = req.params[0];
+      if (!this.JobExists(jobID)) {
+        // TODO: an error might be better here; seems kind of weird to redirect
+        // to / and then back to /master/{id}
+        res.redirect('/');
+        return;
+      }
       res.sendfile(__dirname + '/client/master.html');
-    });
+    }.bind(this));
 
-    this.app.get(/^\/master\/([a-z]+)$/, function(req, res) {
-      // Don't create non-existant jobs. Redirect to '/' (or just return an error).
-      var jobName = req.params[0];
-      // TODO: Using the session is probably not the best idea (multiple
-      // jobs...)
-      req.session.room = jobName;
-      req.session.start = new Date().toString();
-      res.sendfile(__dirname + '/client/master.html');
-    });
-
-    // Peers access this route (any path with a '/' followed by letters)
-    this.app.get(/^\/slave\/([a-z]+)$/, function(req, res) {
-      var jobName = req.params[0];
-      req.session.room = jobName;
-      res.sendfile(__dirname + '/client/slave.html');
-    });
-
-    this.app.io.route('volunteer', function(req) {
-      // TODO: Remove
-      if (!req.data || !req.data.jobID) {
+    // Peers access this route (any path with a '/' followed by letters/numbers)
+    this.app.get(/^\/peer\/([a-z0-9]+)$/, function(req, res) {
+      var peerJobID = req.params[0];
+      if (!this.JobExistsForPeer(peerJobID)) {
+        // TODO: display some kind of error 
         return;
       }
 
-      var roomID = req.data.jobID;
+      var job = this.peerJobs[peerJobID];
       var socketID = req.socket.id;
-      this.AddNewPeer(req.sessionID, roomID, req.socket);
-      req.io.join(roomID);
-      this.Broadcast(req.io.room(roomID), 'new_peer', {socketID: socketID});
-      this.SendToPeer(req.socket, req.sessionID, 'added_to_job', {jobID: roomID});
+      this.AddNewPeer(req.sessionID, job.id, req.socket);
+      req.io.join(job.id);
+      this.Broadcast(req.io.room(job.id), 'new_peer', {socketID: socketID});
+      this.SendToPeer(req.socket, req.sessionID, 'added_to_job', {jobID: job.id});
+
+      res.sendfile(__dirname + '/client/slave.html');
     }.bind(this));
 
     this.app.io.route('leave_job', function(req) {
@@ -288,10 +298,10 @@ Peer.prototype = {
   }
 };
 
-var jobID = 1;
-function Job(name) {
-  this.id = jobID++;
-  this.name = name;
+function Job() {
+  var seed = crypto.randomBytes(20);
+  this.id = crypto.createHash('sha1').update(seed).digest('hex');
+  this.peerID = crypto.createHash('sha1').update(this.id).digest('hex');
   this.volunteers = [];
 }
 
@@ -320,7 +330,6 @@ Job.prototype = {
   Serialize: function() {
     return {
       id: this.id,
-      name: this.name,
       peers: this.GetPeerIds()
     };
   }
