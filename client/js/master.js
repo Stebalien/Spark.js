@@ -18,10 +18,10 @@ require.config({
     'bootstrap/transition': { deps: ['jquery'], exports: '$.fn.transition' }
   },
   paths: {
-    underscore: 'lib/underscore',
-    jquery: 'lib/jquery-2.1.0.min',
-    bootstrap: 'lib/bootstrap.min',
-    EventEmitter: 'lib/EventEmitter'
+    underscore: '/js/lib/underscore',
+    jquery: '/js/lib/jquery-2.1.0.min',
+    bootstrap: '/js/lib/bootstrap.min',
+    EventEmitter: '/js/lib/EventEmitter'
   }
 });
 
