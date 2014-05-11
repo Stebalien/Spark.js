@@ -104,7 +104,7 @@ JobCodeLog.prototype = {
   GetValuesInRange: function(minSeq, maxSeq) {
     var entries = {};
     for (var seq = minSeq; seq <= maxSeq; seq++) {
-      entries[seq] = this.entries[seq].value;
+      entries[seq] = this.entries[seq];
     }
     return entries;
   }

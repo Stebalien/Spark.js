@@ -37,6 +37,12 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   Peer, Dashb
   peer.On("connected", function(){
     peer.On("new_task", function(task) {
       w.call("schedule", task);
+
+      peer.codeLog.GetCodeSinceLast(task.id, function(code) {
+        for (var i = 0; i < code.length; i++) {
+          w.call('exec', code[i]);
+        }
+      });
     });
     peer.On("remove_sources", function(sources) {
       //

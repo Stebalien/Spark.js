@@ -5,6 +5,7 @@ define(['underscore'], function(_) {
     this.entries = {};
     this.minSeq = 0;
     this.pendingGets = {};
+    this.lastSeq = -1;
   }
 
   CodeLog.prototype = {
@@ -74,6 +75,20 @@ define(['underscore'], function(_) {
         entries[seq] = this.entries[seq];
       }
       return entries;
+    },
+
+    GetCodeSinceLast: function(maxSeq, callback) {
+      var minSeq = this.lastSeq + 1;
+      this.GetInRange(minSeq, maxSeq, function(entries) {
+        var code = [];
+        for (var seq = minSeq; seq <= maxSeq; seq++) {
+          if (entries[seq].type == 'result') {
+            code.push(entries[seq].value);
+          }
+        }
+        this.lastSeq = maxSeq; 
+        callback(code);
+      }.bind(this));
     },
 
     GetFromServer: function(minSeq, maxSeq) {
