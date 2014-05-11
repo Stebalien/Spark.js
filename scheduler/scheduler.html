@@ -9,11 +9,10 @@ function Scheduler(server){
   // this time is in ms; we use this to timeout another worker 
   this.timeOutTime = 1000;
 
-  // this map is used to map a parition to whatever is dependent on it
-  // it is an array of a partition id to what is dependent on it
+  // this map is used to map a parition to whatever it is dependent on it
   this.mapPartitionToParent = {};
 
-  // this is a map of partition id to whatever is dependent on it
+  // this is a map of partition id to whoever is dependent on it
   this.mapPartitionToChildren = {}; 
 
   // maps sequence number to status
@@ -38,7 +37,7 @@ Scheduler.prototype = {
     return newarray;
   }
   
-  // this function is responsible for assigning a work to a specific
+  // this function is responsible for assigning a work to a specific task
   // TODO: the actual logic of this method still needs to be implemented
   AssignWorker: function(worker, task){
 	// tell the worker about the task it is going to be assigned 
@@ -68,7 +67,7 @@ Scheduler.prototype = {
   }
 
   // this function is for finding the nodes that serve as the sources
-  // it does by seeing the nodes that it does not have any parents 
+  // it does by seeing the nodes that does not have any parents 
   FindSources: function() {
     rootNodes = [];
     for (var partition: this.mapPartitionToParent) {
@@ -119,28 +118,12 @@ Scheduler.prototype = {
 		   mapChildren[parent].push(target)
 		}
 	   } 	   
-	   target = RemoveFromArray(target, 0);
+	   RemoveFromArray(targets, target);
   	}
 	this.mapPartitionToParent = mapParent;
 	this.mapPartitionToChilrden = mapChildren;
   }
-  // this function is responsible for removing nodes from the graph
-  // we go through all of its children and remove the dependency of that child in the parent graph
-  // if the child no longer has any parents, we remove it from the mapPartitionToParent
-  // nodes are free to be assigned if they are not in the mapPartitionToParent but in the other map 
-  RemoveNode: function(partition) {
-	var children = this.mapPartitionToChildren[partition];
-        for (var i = 0; i < children.length; i++) {
-		child = children[i];
-                this.mapPartitionToParent[child] = RemoveFromArray(this.mapPartitionToParent[child], partition)
-                if (this.mapPartitionToParent[child].length == 0) {
-		   delete this.mapPartitionToParent(child);
-		} 
-	}
-        delete this.mapPartitionToChildren[partition];   
-  }
-
-
+  
   // the code that finishes the task 
   // it updates the last time we have heard from the worker
   // this also updates the worker to task map 
@@ -148,7 +131,7 @@ Scheduler.prototype = {
       // code when one receives a new task Id
       var currentTime =  new Date().getTime();
       this.mapWorkToTime[workerId] = currentTime
-      this.mapWorkerToTasks[workerId] = RemoveFromArray(this.mapWorkerToTasks[workerId], taks);	
+      RemoveFromArray(this.mapWorkerToTasks[workerId], task);	
   }
   
   // this function is responsible for generating the tasks and assigning them
@@ -238,7 +221,7 @@ Scheduler.prototype = {
 	      var task = new Task(sources,sinks);
 	      worker = SelctWorker();
 	      AssignWorker(worker,task);
-	      nodeQueue = RemoveFromArray(nodeQueue, node);yy
+	      RemoveFromArray(nodeQueue, node);
 	} 
   } 
  
@@ -252,7 +235,7 @@ Scheduler.prototype = {
 	   tasks = this.mapWorkerToTasks[key];
 	   for (var task in tasks) {
 		worker = SelctWorker();
-		AssignWorker(worker,tasks)
+		AssignWorker(worker,task)
 	   }
 	   delete this.mapWorkerToTasks[key]
 	   delete this.mapWorkToTime[key]
