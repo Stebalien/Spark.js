@@ -46,6 +46,9 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
         taskManager.submitTask(id, rdds, targets);
       }
     });
+    c.on('append', function(item) {
+      peer.socket.emit('consolelog:put', item);
+    });
     c.on('exec', function() {
       c.lock();
       var text = c.getText();
