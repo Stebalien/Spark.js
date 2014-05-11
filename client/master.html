@@ -12,19 +12,28 @@
     <script src="/js/lib/require.js" data-main="/js/master.js"></script>
   </head>
   <body>
-  <div class="container">
-    <h1>Spark.js</h1>
-    <div class="repl">
-      <div class="display"> </div>
-      <div class="input-group input-group-sm">
-        <span class="input-group-addon"><span class="glyphicon glyphicon-chevron-right"></span></span>
-        <textarea class="entry"></textarea>
-        <span class="input-group-addon run-btn">
-          <span class="glyphicon glyphicon-circle-arrow-right"></span>
-        </span>
+    <div id="main-wrapper">
+      <div id="main" class="container">
+        <h1>Spark.js</h1>
+        <div class="repl">
+          <div class="display"> </div>
+          <div class="input-group input-group-sm">
+            <span class="input-group-addon"><span class="glyphicon glyphicon-chevron-right"></span></span>
+            <textarea class="entry"></textarea>
+            <span class="input-group-addon run-btn">
+              <span class="glyphicon glyphicon-circle-arrow-right"></span>
+            </span>
+          </div>
+          <div class="error alert alert-danger"></div>
+        </div>
       </div>
-      <div class="error alert alert-danger"></div>
     </div>
-  </div>
+    <div id="footer-wrapper">
+      <footer id="footer">
+        <div class="container">
+          Slave URL: <span id="peerUrl">Loading...</span>
+        </div>
+      </footer>
+    </div>
   </body>
-</html>
+  </html>

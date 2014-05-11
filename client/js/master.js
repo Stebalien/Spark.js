@@ -30,45 +30,52 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
 
   var peer = new Peer();
   var taskManager = new MasterTaskManager(peer);
-  peer.Call('consolelog:replay', {}, function(logItems) {
-    $(document).ready(function() {
-      var c = new Console($(".repl"), logItems);
-      var worker = new SparkWorker(peer, true);
-      worker.register({
-        "console/promiseResult": function(id, type) {
-          c.promiseResult(id, type);
-        },
-        "console/fulfillResult": function(id, obj, type) {
-          c.fulfillResult(id, obj, type);
-        },
-        "submitTask": function(id, rdds, targets) {
-          taskManager.submitTask(id, rdds, targets);
-        }
-      });
-      c.on('append', function(item) {
-        peer.Call('consolelog:record', { entry: item });
-      });
-      c.on('exec', function() {
-        c.lock();
-        var text = c.getText();
-        worker.call("exec", util.toURL(text), function(status, error) {
-          c.clearError();
-          switch(status) {
-            case "success":
-              c.displayCode(text);
-              taskManager.recordCode(text);
-              c.setText("");
-              break;
-            case "invalid_syntax":
-              c.setError(error);
-              break;
-            case "error":
-              c.displayCode(text);
-              c.setText("");
-              taskManager.recordCode(text);
-              c.displayError(error);
+  peer.On('connected', function() {
+    peer.Call('consolelog:replay', {}, function(logItems) {
+      $(document).ready(function() {
+        // Add peer url.
+        var peerURL = location.origin + '/slave/' + peer.GetPeerID();
+        $("#peerUrl").replaceWith($("<a>", {text: peerURL, href: peerURL}));
+
+        // Setup console.
+        var c = new Console($(".repl"), logItems);
+        var worker = new SparkWorker(peer, true);
+        worker.register({
+          "console/promiseResult": function(id, type) {
+            c.promiseResult(id, type);
+          },
+          "console/fulfillResult": function(id, obj, type) {
+            c.fulfillResult(id, obj, type);
+          },
+          "submitTask": function(id, rdds, targets) {
+            taskManager.submitTask(id, rdds, targets);
           }
-          c.unlock()
+        });
+        c.on('append', function(item) {
+          peer.Call('consolelog:record', { entry: item });
+        });
+        c.on('exec', function() {
+          c.lock();
+          var text = c.getText();
+          worker.call("exec", util.toURL(text), function(status, error) {
+            c.clearError();
+            switch(status) {
+              case "success":
+                c.displayCode(text);
+                taskManager.recordCode(text);
+                c.setText("");
+                break;
+              case "invalid_syntax":
+                c.setError(error);
+                break;
+              case "error":
+                c.displayCode(text);
+                c.setText("");
+                taskManager.recordCode(text);
+                c.displayError(error);
+            }
+            c.unlock()
+          });
         });
       });
     });
