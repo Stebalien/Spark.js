@@ -84,23 +84,30 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     },
 
     OnMessage: function(message) {
-      if (message.type == 'offer') {
-        this.OnOffer(message);
-      } else if (message.type == 'answer') {
-        this.OnAnswer(message);
-      } else if (message.type == 'icecandidate') {
-        this.OnIceCandidate(message);
-      } else if (message.type == 'new_peer') {
-        this.ConnectToPeer(message.socketID);
-        //this.SendOffer(message);
-      } else if (message.type == 'added_to_job') {
-        this.Emit('added_to_job', message);
-        console.log(message);
-        this.HandleAddedToJob(message);
-        this.Ping();
-      } else if (message.type == 'ping') {
-        this.Emit('ping', message);
-        this.HandlePing(message);
+      switch (message.type) {
+        case 'offer':
+          this.OnOffer(message);
+          break;
+        case 'answer':
+          this.OnAnswer(message);
+          break;
+        case 'icecandidate':
+          this.OnIceCandidate(message);
+          break;
+        case 'new_peer':
+          this.ConnectToPeer(message.socketID);
+          //this.SendOffer(message);
+          break;
+        case 'added_to_job':
+          this.Emit('added_to_job', message);
+          console.log(message);
+          this.HandleAddedToJob(message);
+          this.Ping();
+          break;
+        case 'ping':
+          this.Emit('ping', message);
+          this.HandlePing(message);
+          break;
       }
     },
 
@@ -311,28 +318,33 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     },
 
     HandleMessageFromPeer: function(remoteSocketID, message) {
-      if (message.type == 'get') {
-        this.blockManager.Get(message.id, function(value) {
-          this.SendMessageToPeer(remoteSocketID, {
-            seqID: message.seqID,
-            originalSender: message.senderSocketID,
-            type: 'put',
-            value: value
-          });
-        }.bind(this));
-      } else if (message.type == 'put') {
-        this.blockManager.put(message.id, message.value, message.replication);
-      } else if (message.type == 'delete') {
-        this.blockManager.delete(message.id);
-      } else if (message.type == 'getnow') {
-        this.blockManager.GetNow(message.id, function(value) {
-          this.SendMessageToPeer(remoteSocketID, {
-            seqID: message.seqID,
-            originalSender: message.senderSocketID,
-            type: 'put',
-            value: value
-          });
-        }.bind(this));
+      switch (message.type) {
+        case 'get':
+          this.blockManager.Get(message.id, function(value) {
+            this.SendMessageToPeer(remoteSocketID, {
+              seqID: message.seqID,
+              originalSender: message.senderSocketID,
+              type: 'put',
+              value: value
+            });
+          }.bind(this));
+          break;
+        case 'put':
+          this.blockManager.put(message.id, message.value, message.replication);
+          break;
+        case 'delete':
+          this.blockManager.delete(message.id);
+          break;
+        case 'getnow':
+          this.blockManager.GetNow(message.id, function(value) {
+            this.SendMessageToPeer(remoteSocketID, {
+              seqID: message.seqID,
+              originalSender: message.senderSocketID,
+              type: 'put',
+              value: value
+            });
+          }.bind(this));
+          break;
       }
     }
   };
