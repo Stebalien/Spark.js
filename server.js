@@ -98,7 +98,7 @@ var server = {
         res.redirect('/');
         return;
       }
-      req.session.sessionID = jobID;
+      req.session.jobID = jobID;
       res.sendfile(__dirname + '/client/master.html');
     }.bind(this));
 
@@ -181,7 +181,7 @@ var server = {
       }
 
       for (var jobID in this.jobs) {
-        this.jobs[jobID] = this.jobs[jobID].RemovePeer(peer);
+        this.jobs[jobID].RemovePeer(peer);
       }
 
       delete this.peers[req.sessionID];
