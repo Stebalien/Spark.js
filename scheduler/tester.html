@@ -5,7 +5,7 @@ var data = {
   "seq": 0,
   "code": "RDD.http(\"http://localhost:8080\").lines().split(10).map(function(line) { return line.length; }).sum().print()",
   "targets": [
-    "6/0","8/0", "9/0"
+    "1/0"
   ],
   "rdds": [
     [
@@ -19,6 +19,36 @@ var data = {
         "id": "1/0",
         "dependencies": [
           "0/0"
+        ]
+      },
+      {
+        "id": "2/0",
+        "dependencies": [
+	  "0/0"
+        ]
+      },
+      {
+        "id": "3/0",
+        "dependencies": [
+	  "0/0"
+        ]
+      },
+      {
+        "id": "4/0",
+        "dependencies": [
+	  "0/0"
+        ]
+      },
+      {
+        "id": "5/0",
+        "dependencies": [
+	  "0/0"
+        ]
+      },
+      {
+        "id": "5/0",
+        "dependencies": [
+	  "0/0"
         ]
       }
     ]
@@ -76,7 +106,6 @@ Scheduler.prototype = {
 
   BuildDependencyTree: function(submission) {
      var json = data;
-     console.log(json.rdds);
     //Check if this submission has already been added
     this.targets = json.targets;
     for (var i = 0; i < json.rdds.length; i++) {
@@ -85,23 +114,24 @@ Scheduler.prototype = {
         for (var j = 0; j < rdd.length; j++) {
           var partition = rdd[j];
           //Build node <- parents relationships
-          if (!(partition.id in this.mapPartitionToParent)) {
-            this.mapPartitionToParent[partition.id] = partition.dependencies;
-          } else {
-            this.mapPartitionToParent[partition.id] = Array.prototype.push.apply(this.mapPartitionToParent[partition.id], partition.dependencies);
-          }  
+	   temp = new Array() ;
+	   for (var dependent = 0; dependent < partition.dependencies.length; dependent ++) {
+		temp.push(partition.dependencies[dependent]);
+	   } 
+            this.mapPartitionToParent[partition.id] = temp;
+	   if (!(partition.id in this.mapPartitionToChildren)) {
+		this.mapPartitionToChildren[partition.id] = new Array();
+	   } 
 
 	  //Build node <- children relationships
           for (var k = 0; k < partition.dependencies.length; k ++) {
             var dependency = partition.dependencies[k];
-            console.log("we get a dependency here", dependency);
 	    if(!(dependency in this.mapPartitionToChildren)) {
               this.mapPartitionToChildren[dependency] = [partition.id];
             } else {
-              this.mapPartitionToChildren[dependency] = this.mapPartitionToChildren.push(partition.id);
+              this.mapPartitionToChildren[dependency].push(partition.id);
             }
           }
-
         }
       }    
     }, 
@@ -190,7 +220,7 @@ Scheduler.prototype = {
 	   RemoveFromArray(targets, target);
   	}
 	this.mapPartitionToParent = mapParent;
-	this.mapPartitionToChilrden = mapChildren;
+	this.mapPartitionToChildren = mapChildren;
   },
 
 
@@ -210,7 +240,7 @@ Scheduler.prototype = {
 	mapNodeToChildrenExplored = {}	
 	// this is basically the queue that we need to process
 	// it is initalize with the sources
-        nodeQueue = FindSources();
+        nodeQueue = this.FindSources();
 	// this is useful for the map of nodes explored 
 	mapNodesExplored = {}
 	while (nodeQueue.length == 0) {
@@ -288,9 +318,11 @@ Scheduler.prototype = {
 	      // creating a new task,assigning it, and removing the old node from the queue 
 	      var task = new Task(sources,sinks);
 	      worker = SelctWorker();
-	      AssignWorker(worker,task);
+	      console.log("we created this task",task);
+              AssignWorker(worker,task);
 	      RemoveFromArray(nodeQueue, node);
-	} 
+	}
+	console.log("finished with this method") 
   },
  
   // this method is responsible for checking that the worker is done with its task 
@@ -329,5 +361,6 @@ scheduler.BuildDependencyTree(data)
 console.log("the scheduler values are for children",scheduler.mapPartitionToChildren);
 console.log("the scheduler values are for parents",scheduler.mapPartitionToParent);
 console.log("the scheduler values for the tasks are", scheduler.targets)
+scheduler.GenerateTask()
 </script>
 </html>
