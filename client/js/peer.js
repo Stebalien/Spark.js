@@ -90,7 +90,6 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         //this.SendOffer(message);
       } else if (message.type == 'added_to_job') {
         this.Emit('added_to_job', message);
-        this.blockManager.CreateJob(message.jobID);
       } else if (message.type == 'ping') {
         this.Emit('ping', message);
         this.HandlePing(message);
@@ -141,7 +140,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
 
     Emit: function(type, data) {
       data.type = type;
-      console.log(data);
+      //console.log(data);
 
       if (!(type in this.eventHandlers)) {
         return;
@@ -284,19 +283,18 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
 
     HandleMessageFromPeer: function(remoteSocketID, message) {
       if (message.type == 'get') {
-        this.blockManager.Get(message.jobID, message.id, function(value) {
+        this.blockManager.Get(message.id, function(value) {
           this.SendMessageToPeer(remoteSocketID, {
             seqID: message.seqID,
-            jobID: message.jobID,
             originalSender: message.senderSocketID,
             type: 'put',
             value: value
           });
         }.bind(this));
       } else if (message.type == 'put') {
-        this.blockManager.put(message.jobID, message.id, message.value, message.replication);
+        this.blockManager.put(message.id, message.value, message.replication);
       } else if (message.type == 'delete') {
-        this.blockManager.delete(message.jobID, message.id);
+        this.blockManager.delete(message.id);
       }
     }
   };
@@ -445,7 +443,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     },
 
     HandleIncomingMessage: function(event) {
-      console.log(event.data);
+      //console.log(event.data);
       var message = JSON.parse(event.data);
       var seqID = message.seqID;
 

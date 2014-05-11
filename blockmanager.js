@@ -8,9 +8,17 @@ function JobBlockManager(jobID) {
 
 JobBlockManager.prototype = {
   // Find out which peer is working on partitionID
-  Get: function(partitionID, callback) {
+  GetNow: function(partitionID) {
     if (partitionID in this.blocks) {
-      callback(this.blocks[partitionID]);
+      return this.blocks[partitionID];
+    }
+    return null;
+  },
+
+  Get: function(partitionID, callback) {
+    var value = this.GetNow(partitionID);
+    if (value) {
+      callback(value);
       return;
     }
 

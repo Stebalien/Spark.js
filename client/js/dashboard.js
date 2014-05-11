@@ -7,10 +7,12 @@ require.config({
   },
 
   paths: {
-    jquery: 'lib/jquery-2.1.0.min',
-    bootstrap: 'lib/bootstrap.min',
-    EventEmitter: 'lib/EventEmitter',
-    underscore: 'lib/underscore'
+    jquery: '/js/lib/jquery-2.1.0.min',
+    bootstrap: '/js/lib/bootstrap.min',
+    EventEmitter: '/js/lib/EventEmitter',
+    underscore: '/js/lib/underscore',
+    peer: '/js/peer',
+    blockmanager: '/js/blockmanager'
   }
 });
 

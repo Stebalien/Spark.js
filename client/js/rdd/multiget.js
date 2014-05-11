@@ -1,4 +1,4 @@
-define(["manager", "rdd/rdd", "underscore"], function(Manager, RDD, _) {
+define(["rdd/rdd", "underscore"], function(RDD, _) {
   var MultigetRDD = RDD.implement({
     init: function(urls) {
       this.urls = urls;

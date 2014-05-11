@@ -65,25 +65,41 @@ var server = {
       this.SendReliable(socket, {type: 'connected', socketID: socket.id});
     }.bind(this));
 
-    this.app.use('/', express.static(__dirname + '/client/js'));
+    this.app.use('/js', express.static(__dirname + '/client/js'));
+    this.app.use('/css', express.static(__dirname + '/client/css'));
+    this.app.use('/fonts', express.static(__dirname + '/client/fonts'));
     this.app.use('/client', express.static(__dirname + '/client'));
     this.app.use('/static', express.static(__dirname + '/'));
  
     // Client should access this route to submit a new RDD
     this.app.get('/', function(req, res) {
       req.session.start = new Date().toString();
-      res.sendfile(__dirname + '/index.html');
+      // TODO: Create Job Here
+      // Assign both master id and slave id (we can just use SHA256(masterId)
+      // as the slave id).
+      // Redirect to /master/masterJobId.html
+      res.sendfile(__dirname + '/client/master.html');
+    });
+
+    this.app.get(/^\/master\/([a-z]+)$/, function(req, res) {
+      // Don't create non-existant jobs. Redirect to '/' (or just return an error).
+      var jobName = req.params[0];
+      // TODO: Using the session is probably not the best idea (multiple
+      // jobs...)
+      req.session.room = jobName;
+      req.session.start = new Date().toString();
+      res.sendfile(__dirname + '/client/master.html');
     });
 
     // Peers access this route (any path with a '/' followed by letters)
-    this.app.get(/^(\/)([a-z]+)$/, function(req, res) {
-      var jobName = req.params[1];
+    this.app.get(/^\/slave\/([a-z]+)$/, function(req, res) {
+      var jobName = req.params[0];
       req.session.room = jobName;
-      server.AddNewPeer(req.sessionID, jobName);
-      res.sendfile(__dirname + '/index.html');
+      res.sendfile(__dirname + '/client/slave.html');
     });
 
     this.app.io.route('volunteer', function(req) {
+      // TODO: Remove
       if (!req.data || !req.data.jobID) {
         return;
       }
