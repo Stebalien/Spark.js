@@ -1,7 +1,7 @@
 var _ = require('underscore');
 
 function JobBlockManager(jobID) {
-  this.jobID;
+  this.jobID = jobID;
   this.blocks = {};
   this.pendingGets = {};
 }
