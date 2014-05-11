@@ -77,6 +77,12 @@ define(['underscore'], function(_) {
     },
 
     GetFromServer: function(minSeq, maxSeq) {
+      var message = {
+        jobID: this.peer.jobID,
+        minSeq: minSeq,
+        maxSeq: maxSeq
+      };
+
       this.peer.socket.emit('codelog:get', message, function(entries) {
         this.AddEntries(entries);
       }.bind(this));

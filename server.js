@@ -242,13 +242,15 @@ var server = {
       }.bind(this)
     });
 
-    this.app.io.route('get_code', function(req) {
-      var jobID = req.data.jobID;
-      var minSeq = req.data.minSeq;
-      var maxSeq = req.data.maxSeq;
-      this.GetFromCodeLog(jobID, minSeq, maxSeq, function(entries) {
-        req.io.respond(entries);
-      }.bind(this));
+    this.app.io.route('codelog', {
+      'get': function(req) {
+        var jobID = req.data.jobID;
+        var minSeq = req.data.minSeq;
+        var maxSeq = req.data.maxSeq;
+        this.GetFromCodeLog(jobID, minSeq, maxSeq, function(entries) {
+          req.io.respond(entries);
+        }.bind(this));
+      }
     });
 
     this.app.io.route('submit_rdd', function(req) {
