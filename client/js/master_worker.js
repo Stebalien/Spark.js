@@ -6,6 +6,12 @@ self.isMaster = true;
 
 require(["underscore", "worker/rpc", "worker/port", "rdd"], function(_, rpc, port, RDD) {
   self.RDD = RDD;
+  // TODO: Expire
+  rpc.register("init", function(script, cb) {
+    self.initializing = true;
+    importScripts(script);
+    self.initializing = false;
+  });
   rpc.register("exec", function(script, cb) {
     try {
       importScripts(script);

@@ -35,16 +35,15 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
     var c = new Console($(".repl"));
     var worker = new SparkWorker(peer, true);
 
-    var promisedLogLines = [];
     worker.register({
-      "console/promiseLog": function(id) {
-        promisedLogLines[id] = c.promiseLog();
+      "console/promiseResult": function(id, type) {
+        c.promiseResult(id, type);
       },
-      "console/fulfillLog": function(id, obj) {
-        promisedLogLines[id](obj);
+      "console/fulfillResult": function(id, obj, type) {
+        c.fulfillResult(id, obj, type);
       },
-      "submitTask": function(rdds, targets) {
-        taskManager.submitTask(rdds, targets);
+      "submitTask": function(id, rdds, targets) {
+        taskManager.submitTask(id, rdds, targets);
       }
     });
     c.on('exec', function() {

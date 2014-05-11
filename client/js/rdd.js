@@ -67,17 +67,21 @@ function(RDD, WorkerConsole, util, _) {
 
 
   if (self.isMaster) {
-    var nextPrintId = 0;
-    RDD.extend("print", function() {
-      var id = nextPrintId++;
-      var that = this;
+    function display(rdd, type) {
       // Wait
       _.defer(function() {
-        WorkerConsole.promiseLog(id);
-        that._collect(function(values) {
-          WorkerConsole.fulfillLog(id, values);
+        var id = rdd._collect(function(values) {
+          WorkerConsole.fulfillResult(id, values, type);
         });
+        WorkerConsole.promiseResult(id, type);
       });
+    }
+
+    RDD.extend("print", function() {
+      display(this, 'json');
+    });
+    RDD.extend("plotLine", function() {
+      display(this, 'plotLine');
     });
 
     RDD.extend("save", function() {

@@ -13,7 +13,7 @@ define([
   "cm/addon/lint/lint",
   "cm/addon/lint/javascript-lint"
 ], function($, EventEmitter, CodeMirror) {
-  function Console(element) {
+  function Console(element, initial) {
     var that = this;
     this._display = element.find(".display");
     this._error = element.find(".error");
@@ -37,6 +37,9 @@ define([
         }
       }
     );
+    _.each(initial, function(item) {
+      that._append($(item));
+    });
     element.find(".run-btn").on("click", function() {
       if (that.getText() !== "") {
         that.emit("exec");
@@ -76,8 +79,9 @@ define([
 
   Console.prototype.displayCode = function(text) {
     var doScroll = isAtBottom();
-    var node = $("<pre class='cm-s-default code'></pre>").appendTo(this._display);
+    var node = $('<pre class="cm-s-default code"></div>').appendTo(this._display);
     CodeMirror.runMode(text, {name: "javascript"}, node[0]);
+    this.trigger("change");
     if (doScroll) scroll();
   };
 
@@ -86,6 +90,7 @@ define([
     var node = $('<div class="alert alert-danger"></div>');
     node.text(err);
     node.appendTo(this._display);
+    this.trigger("change");
     if (doScroll) scroll();
   };
 
@@ -94,19 +99,55 @@ define([
     var text = JSON.stringify(object, null, 2);
     var node = $("<pre class='cm-s-default result'></pre>").appendTo(this._display);
     CodeMirror.runMode(text, {name: "javascript", json: true}, node[0]);
+    this.trigger("change");
     if (doScroll) scroll();
   };
 
-  Console.prototype.promiseLog = function() {
-    var doScroll = isAtBottom();
-    var node = $("<pre class='cm-s-default result'></pre>").appendTo(this._display);
-    node.text("Calculating...");
-    if (doScroll) scroll();
-    return function(value) {
+  function drawText(ctx, text) {
+    var x = (ctx.canvas.width - ctx.measureText(text).width)/2;
+    var y = ctx.canvas.height/2;
+    ctx.font = '30pt Sans Serif';
+    ctx.fillText(text, x, y);
+  }
+
+  Console.prototype.promiseResult = function(id, type) {
+    if (this._display.find("#result-"+id).empty()) {
+      var that = this;
       var doScroll = isAtBottom();
-      CodeMirror.runMode(JSON.stringify(value, null, 2), {name: "javascript", json: true}, node[0]);
+      var node;
+      switch (type) {
+        case "json":
+          node = $("<pre class='cm-s-default result' id='result-"+id+"'>Calculating...</pre>");
+          break;
+        case "plotLine":
+          node = $("<canvas width='600' height='400' class='result' id='result-"+id+"'></canvas>");
+          _.defer(function() {
+            drawText(node.get(0).getContext('2d'), "Calculating...");
+          });
+          break;
+      }
+      node.data('type', type);
+      node.appendTo(this._display);
+      this.trigger("change");
       if (doScroll) scroll();
-    };
+    }
+  };
+  Console.prototype.fulfillResult = function(id, value, type) {
+    var doScroll = isAtBottom();
+    var node = this._display.find("#result-"+id);
+    switch (type) {
+      case 'json':
+        CodeMirror.runMode(JSON.stringify(value, null, 2), {name: "javascript", json: true}, node[0]);
+        break;
+      case 'plotLine':
+        var data = {
+          labels: _.map(value, function(v, i) { return ''+i; }),
+          datasets: [ { data: value } ]
+        };
+        new Chart(node.get(0).getContext('2d')).Line(data, {datasetFill: false});
+        break;
+    }
+    if (doScroll) scroll();
   };
 
   return Console;
