@@ -15,8 +15,8 @@ var server = {
   blockManager: null,
   consoleLog: null,
 
-  AddNewPeer: function(sessionID, jobID, socket) {
-    var peer = new Peer(sessionID, jobID, socket);
+  AddNewPeer: function(sessionID, jobID, socket, isMaster) {
+    var peer = new Peer(sessionID, jobID, socket, isMaster);
     this.peers[sessionID] = peer;
     this.sockets[socket.id] = socket;
     return peer;
@@ -99,6 +99,7 @@ var server = {
         return;
       }
       req.session.jobID = jobID;
+      req.session.isMaster = true;
       res.sendfile(__dirname + '/client/master.html');
     }.bind(this));
 
@@ -128,7 +129,7 @@ var server = {
       data.jobID = job.id;
 
       var socketID = req.socket.id;
-      this.AddNewPeer(req.sessionID, job.id, req.socket);
+      this.AddNewPeer(req.sessionID, job.id, req.socket, req.session.isMaster);
       req.io.join(job.id);
       this.Broadcast(req.io.room(job.id), 'new_peer', {socketID: socketID});
       this.SendToPeer(req.socket, req.sessionID, 'added_to_job', data);
@@ -311,17 +312,22 @@ var server = {
 };
 
 var peerID = 1;
-function Peer(sessionID, jobID, socket) {
+function Peer(sessionID, jobID, socket, isMaster) {
   this.id = peerID++;
   this.sessionID = sessionID;
   this.jobID = jobID;
   this.socket = socket;
+  this.isMaster = isMaster;
   this.UpdatePingTime();
 }
 
 Peer.prototype = {
   UpdatePingTime: function() {
     this.mostRecentPing = new Date().getTime();
+  },
+
+  IsMaster: function() {
+    return this.isMaster;
   }
 };
 
