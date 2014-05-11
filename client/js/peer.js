@@ -25,6 +25,7 @@ define(['blockmanager', 'underscore', 'codelog'], function(BlockManager, _, Code
     this.blockManager = new BlockManager(this);
     this.codeLog = new CodeLog(this);
     this.jobs = {};
+    this.activeOnJob = false;
   }
 
   Peer.prototype = {
@@ -119,6 +120,7 @@ define(['blockmanager', 'underscore', 'codelog'], function(BlockManager, _, Code
       if (message.peerJobID) {
         this.peerJobID = message.peerJobID;
       }
+      this.activeOnJob = true;
     },
 
     GetPeerID: function() {
@@ -220,6 +222,10 @@ define(['blockmanager', 'underscore', 'codelog'], function(BlockManager, _, Code
     },
 
     Volunteer: function() {
+      if (!this.activeOnJob) {
+        return;
+      }
+
       if (!this.socket.socket.connected) {
         this.ConnectToServer(serverURL);
       }
@@ -295,6 +301,7 @@ define(['blockmanager', 'underscore', 'codelog'], function(BlockManager, _, Code
 
     DisconnectFromJob: function() {
       this.socket.emit('leave_job', {jobID: this.jobID});
+      this.activeOnJob = false;
     },
 
     ConnectToPeer: function(socketID, callback) {
