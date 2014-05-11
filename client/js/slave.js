@@ -34,14 +34,16 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   Peer, Dashb
     dashboard.Init();
   });
   var w = new SparkWorker(peer, false); // Slave
-  peer.On("new_task", function(task) {
-    w.call("schedule", task);
-  });
-  peer.On("remove_sources", function(sources) {
-    //
-    w.call("remove_sources", sources);
-  });
-  peer.On("remove_sinks", function(sinks) {
-    // TODO: Garbage Collection
+  peer.On("connected", function(){
+    peer.On("new_task", function(task) {
+      w.call("schedule", task);
+    });
+    peer.On("remove_sources", function(sources) {
+      //
+      w.call("remove_sources", sources);
+    });
+    peer.On("remove_sinks", function(sinks) {
+      // TODO: Garbage Collection
+    });
   });
 });

@@ -123,6 +123,7 @@ var server = {
         return;
       }
 
+      req.session.isMaster = false;
       req.session.peerJobID = peerJobID;
 
       res.sendfile(__dirname + '/client/peer.html');
@@ -184,6 +185,13 @@ var server = {
 
       var socket = this.GetSocket(sockets.answererSocketID);
       this.SendToPeer(socket, req.sessionID, 'icecandidate', req.data);
+    }.bind(this));
+
+    this.app.io.route('report_message', function(req){
+      var jobID = req.data.jobID;
+
+      var master = this.GetMaster(jobID).socket;
+      this.SendToPeer(master, req.sessionID, 'report_message', req.data);
     }.bind(this));
 
     this.app.io.route('disconnect', function(req) {
@@ -335,13 +343,13 @@ var server = {
   },
 
   GetMaster: function(jobID) {
-    if (!this.jobExists(jobID)) {
+    if (!this.JobExists(jobID)) {
       return null;
     }
-
     return this.jobs[jobID].GetMaster();
   },
 
+<<<<<<< Updated upstream
   AddToCodeLog: function(jobID, entry) {
     this.codeLog.AddEntry(jobID, entry);
   },
@@ -349,6 +357,8 @@ var server = {
   GetFromCodeLog: function(jobID, minSeq, maxSeq, callback) {
     this.codeLog.GetInRange(jobID, minSeq, maxSeq, callback);
   }
+=======
+>>>>>>> Stashed changes
 };
 
 var peerID = 1;

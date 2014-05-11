@@ -106,12 +106,17 @@ define(['blockmanager', 'underscore', 'codelog'], function(BlockManager, _, Code
           this.Emit('added_to_job', message);
           console.log(message);
           this.HandleAddedToJob(message);
+	  this.ReportMessage(this.socketID + " added to job @ " + String(new Date()));
           this.Ping();
           break;
         case 'ping':
           this.Emit('ping', message);
           this.HandlePing(message);
           break;
+	case 'report_message':
+	  console.log(message);
+	  this.HandleMessage(message);
+	  break;
       }
     },
 
@@ -359,6 +364,23 @@ define(['blockmanager', 'underscore', 'codelog'], function(BlockManager, _, Code
             });
           }.bind(this));
           break;
+      }
+    },
+
+    ReportMessage: function(err){
+      console.log("report message", this.jobID);
+      var data = {
+        jobID: this.jobID,
+        error: err
+      };
+      this.socket.emit('report_message', data) 
+      this.Emit('report_message', data)
+    }, 
+
+    HandleMessage: function(data) {
+      if (this.IsMaster()){
+        var error = data.error;
+        $("#error_log").append("<br>" + error);
       }
     }
   };
