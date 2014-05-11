@@ -349,7 +349,6 @@ var server = {
     return this.jobs[jobID].GetMaster();
   },
 
-<<<<<<< Updated upstream
   AddToCodeLog: function(jobID, entry) {
     this.codeLog.AddEntry(jobID, entry);
   },
@@ -357,8 +356,6 @@ var server = {
   GetFromCodeLog: function(jobID, minSeq, maxSeq, callback) {
     this.codeLog.GetInRange(jobID, minSeq, maxSeq, callback);
   }
-=======
->>>>>>> Stashed changes
 };
 
 var peerID = 1;
