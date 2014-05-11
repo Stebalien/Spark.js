@@ -78,6 +78,12 @@ define([], function() {
     }
 
     this.pendingGets[id] = [];
+
+    var message = {
+      id: id,
+      jobID: this.peer.jobID
+    };
+    this.peer.socket.emit('blockmanager:put', message);
   };
 
   BlockManager.prototype.Delete = function(id) {
