@@ -19,7 +19,7 @@ JobCodeLog.prototype = {
       return;
     }
 
-    throw new Error('Unknown entry type: ' + entry.type);
+    //throw new Error('Unknown entry type: ' + entry.type);
   },
 
   ProcessLog: function() {
@@ -102,9 +102,9 @@ JobCodeLog.prototype = {
   },
 
   GetValuesInRange: function(minSeq, maxSeq) {
-    var entries = [];
+    var entries = {};
     for (var seq = minSeq; seq <= maxSeq; seq++) {
-      entries.push(this.entries[seq].value);
+      entries[seq] = this.entries[seq].value;
     }
     return entries;
   }
@@ -126,7 +126,8 @@ CodeLog.prototype = {
 
   AddEntry: function(jobID, entry) {
     if (!this.JobExists(jobID)) {
-      throw new Error('CodeLog for ' + jobID + ' does not exist. AddEntry failed.');
+      //throw new Error('CodeLog for ' + jobID + ' does not exist. AddEntry failed.');
+      return;
     }
 
     var codeLog = this.jobCodeLogs[jobID];
@@ -135,7 +136,8 @@ CodeLog.prototype = {
 
   GetInRange: function(jobID, minSeq, maxSeq, callback) {
     if (!this.JobExists(jobID)) {
-      throw new Error('CodeLog for ' + jobID + ' does not exist. GetInRange failed.');
+      //throw new Error('CodeLog for ' + jobID + ' does not exist. GetInRange failed.');
+      return;
     }
 
     var codeLog = this.jobCodeLogs[jobID];

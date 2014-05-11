@@ -1,4 +1,4 @@
-define(['blockmanager', 'underscore'], function(BlockManager, _) {
+define(['blockmanager', 'underscore', 'codelog'], function(BlockManager, _, CodeLog) {
 
   var PING_INTERVAL = 1000;
 
@@ -23,6 +23,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     this.socketID = null;
     this.ConnectToServer(serverURL);
     this.blockManager = new BlockManager(this);
+    this.codeLog = new CodeLog(this);
     this.jobs = {};
   }
 

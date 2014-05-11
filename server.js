@@ -242,6 +242,15 @@ var server = {
       }.bind(this)
     });
 
+    this.app.io.route('get_code', function(req) {
+      var jobID = req.data.jobID;
+      var minSeq = req.data.minSeq;
+      var maxSeq = req.data.maxSeq;
+      this.GetFromCodeLog(jobID, minSeq, maxSeq, function(entries) {
+        req.io.respond(entries);
+      }.bind(this));
+    });
+
     this.app.io.route('submit_rdd', function(req) {
       // TODO: this.blockManager.CreateJob(req.data.jobID);
     });
@@ -335,6 +344,10 @@ var server = {
 
   AddToCodeLog: function(jobID, entry) {
     this.codeLog.AddEntry(jobID, entry);
+  },
+
+  GetFromCodeLog: function(jobID, minSeq, maxSeq, callback) {
+    this.codeLog.GetInRange(jobID, minSeq, maxSeq, callback);
   }
 };
 
