@@ -19,6 +19,11 @@ var server = {
     var peer = new Peer(sessionID, jobID, socket, isMaster);
     this.peers[sessionID] = peer;
     this.sockets[socket.id] = socket;
+    if (isMaster) {
+      this.jobs[jobID].AddMaster(peer);
+    } else {
+      this.jobs[jobID].AddPeer(peer);
+    }
     return peer;
   },
 
@@ -312,6 +317,14 @@ var server = {
     for (var i = 0; i < this.eventHandlers[type].length; i++) {
       this.eventHandlers[type][i](data);
     }
+  },
+
+  GetMaster: function(jobID) {
+    if (!this.jobExists(jobID)) {
+      return null;
+    }
+
+    return this.jobs[jobID].GetMaster();
   }
 };
 
@@ -340,11 +353,20 @@ function Job() {
   this.id = crypto.createHash('sha1').update(seed).digest('hex');
   this.peerID = crypto.createHash('sha1').update(this.id).digest('hex');
   this.volunteers = [];
+  this.master = null;
 }
 
 Job.prototype = {
   AddPeer: function(peer) {
     this.volunteers.push(peer);
+  },
+
+  AddMaster: function(master) {
+    this.master = master;
+  },
+
+  GetMaster: function() {
+    return this.master;
   },
 
   RemovePeer: function(peer) {
