@@ -95,6 +95,7 @@ var server = {
         res.redirect('/');
         return;
       }
+      req.session.sessionID = jobID;
       res.sendfile(__dirname + '/client/master.html');
     }.bind(this));
 
@@ -106,14 +107,28 @@ var server = {
         return;
       }
 
-      var job = this.peerJobs[peerJobID];
+      req.session.peerJobID = peerJobID;
+
+      res.sendfile(__dirname + '/client/slave.html');
+    }.bind(this));
+
+    this.app.io.route('volunteer', function(req) {
+      var job;
+      var data = {};
+      if (req.session.jobID) {
+        job = this.jobs[req.session.jobID];
+        data.peerJobID = job.peerID;
+      } else if (req.session.peerJobID) {
+        job = this.peerJobs[req.session.peerJobID];
+      }
+
+      data.jobID = job.id;
+
       var socketID = req.socket.id;
       this.AddNewPeer(req.sessionID, job.id, req.socket);
       req.io.join(job.id);
       this.Broadcast(req.io.room(job.id), 'new_peer', {socketID: socketID});
-      this.SendToPeer(req.socket, req.sessionID, 'added_to_job', {jobID: job.id});
-
-      res.sendfile(__dirname + '/client/slave.html');
+      this.SendToPeer(req.socket, req.sessionID, 'added_to_job', data);
     }.bind(this));
 
     this.app.io.route('leave_job', function(req) {
