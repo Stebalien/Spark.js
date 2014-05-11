@@ -108,25 +108,18 @@ var server = {
     this.app.get(/^\/peer\/([a-z0-9]+)$/, function(req, res) {
       var peerJobID = req.params[0];
       if (!this.JobExistsForPeer(peerJobID)) {
-        // TODO: some kind of error
+        // TODO: display some kind of error 
         return;
       }
+
+      var job = this.peerJobs[peerJobID];
+      var socketID = req.socket.id;
+      this.AddNewPeer(req.sessionID, job.id, req.socket);
+      req.io.join(job.id);
+      this.Broadcast(req.io.room(job.id), 'new_peer', {socketID: socketID});
+      this.SendToPeer(req.socket, req.sessionID, 'added_to_job', {jobID: job.id});
 
       res.sendfile(__dirname + '/client/slave.html');
-    }.bind(this));
-
-    this.app.io.route('volunteer', function(req) {
-      // TODO: Remove
-      if (!req.data || !req.data.jobID) {
-        return;
-      }
-
-      var roomID = req.data.jobID;
-      var socketID = req.socket.id;
-      this.AddNewPeer(req.sessionID, roomID, req.socket);
-      req.io.join(roomID);
-      this.Broadcast(req.io.room(roomID), 'new_peer', {socketID: socketID});
-      this.SendToPeer(req.socket, req.sessionID, 'added_to_job', {jobID: roomID});
     }.bind(this));
 
     this.app.io.route('leave_job', function(req) {
