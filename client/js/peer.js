@@ -96,7 +96,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       } else if (message.type == 'added_to_job') {
         this.Emit('added_to_job', message);
         console.log(message);
-        this.jobID = message.jobID;
+        this.HandleAddedToJob(message);
         this.Ping();
       } else if (message.type == 'ping') {
         this.Emit('ping', message);
@@ -106,17 +106,17 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
 
     HandleAddedToJob: function(message) {
       this.jobID = message.jobID;
-      if (message.peerID) {
-        this.peerID = message.peerID;
+      if (message.peerJobID) {
+        this.peerJobID = message.peerJobID;
       }
     },
 
     GetPeerID: function() {
-      return this.peerID;
+      return this.peerJobID;
     },
 
     IsMaster: function() {
-      return this.jobID && this.peerID;
+      return this.jobID && this.peerJobID;
     },
 
     HandlePing: function(message) {
