@@ -7,19 +7,28 @@ define([], function() {
     this.pendingGets = {};
   }
 
-  BlockManager.prototype.GetNow = function(id) {
+  BlockManager.prototype.GetNow = function(id, callback) {
     if (id in this.localBlocks) {
-      return this.localBlocks[id];
+      callback(this.localBlocks[id]);
+      return;
     }
-    return null;
+
+    if (!(id in this.pendingGets)) {
+      this.pendingGets[id] = [];
+    }
+    this.pendingGets[id].push(callback);
+
+    if (id in this.remoteBlockSocketIDs) {
+      this.GetFromPeer(id, this.remoteBlockSocketIDs[id], true);
+      return;
+    }
+    callback(null);
   }
 
   BlockManager.prototype.Get = function(id, callback) {
     // Cached locally
-    var value = this.GetNow(id);
-    if (value) {
-      callback(value);
-      return;
+    if (id in this.localBlocks) {
+      return this.localBlocks[id];
     }
 
     if (!(id in this.pendingGets)) {
@@ -45,9 +54,9 @@ define([], function() {
     }.bind(this));
   };
 
-  BlockManager.prototype.GetFromPeer = function(id, socketID) {
+  BlockManager.prototype.GetFromPeer = function(id, socketID, getNow) {
     this.peer.SendMessageToPeer(socketID, {
-      type: 'get',
+      type: getNow ? 'getnow' : 'get',
       id: id
     });
   };
@@ -55,7 +64,9 @@ define([], function() {
   BlockManager.prototype.Put = function(id, value, replication) {
     // If doing a put after fetching from another peer, should possibly notify 
     // server that this peer has this block
-    this.localBlocks[id] = value;
+    if (value) {
+      this.localBlocks[id] = value;
+    }
 
     if (replication && replication > 1) {
       // TODO: replicate
