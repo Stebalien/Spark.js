@@ -30,7 +30,7 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
 
   var peer = new Peer();
   var taskManager = new MasterTaskManager(peer);
-  peer.socket.emit('consolelog:replay', {jobID: peer.jobID}, function(logItems) {
+  peer.Call('consolelog:replay', {}, function(logItems) {
     $(document).ready(function() {
       var c = new Console($(".repl"), logItems);
       var worker = new SparkWorker(peer, true);
@@ -46,10 +46,7 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
         }
       });
       c.on('append', function(item) {
-        peer.socket.emit('consolelog:record', {
-          jobID: peer.jobID,
-          entry: item
-        });
+        peer.Call('consolelog:record', { entry: item });
       });
       c.on('exec', function() {
         c.lock();
