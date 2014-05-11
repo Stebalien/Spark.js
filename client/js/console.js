@@ -122,7 +122,7 @@ define([
   };
 
   Console.prototype.displayError = function(err) {
-    this._displayError(text);
+    this._displayError(err);
     this.emit('append', {
       type: 'error',
       value: err,

@@ -35,28 +35,6 @@
   vertical-align: middle;
 }
 
-html, body {
-  height: 100%;
+.loaded {
+  visibility: hidden;
 }
-
-#main-wrapper {
-  min-height: 100%;
-}
-
-#main {
-  overflow:auto;
-  padding-bottom:40px;
-}
-
-#footer {
-  background-color: #eee;
-  border-top: 1px solid #ccc;
-}
-
-#footer-wrapper {
-  position: relative;
-  margin-top: -42px;
-  height: 21px;
-  clear:both;
-  padding-top:21px;
-} 

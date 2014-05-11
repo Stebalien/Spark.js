@@ -39,6 +39,8 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
 
         // Setup console.
         var c = new Console($(".repl"), logItems);
+        $(".loading").remove();
+        $(".loaded").css("visibility", "visible");
         var worker = new SparkWorker(peer, true);
         worker.register({
           "console/promiseResult": function(id, type) {

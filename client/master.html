@@ -12,9 +12,16 @@
     <script src="/js/lib/require.js" data-main="/js/master.js"></script>
   </head>
   <body>
-    <div id="main-wrapper">
-      <div id="main" class="container">
+    <div class="container">
+      <div class="page-header">
         <h1>Spark.js</h1>
+      </div>
+      <div class="loading jumbotron">
+        <p>Connecting...</p>
+      </div>
+      <div class="loaded">
+        <p class="text-muted">Peer URL: <span id="peerUrl">Connecting...</span></p>
+        <hr />
         <div class="repl">
           <div class="display"> </div>
           <div class="input-group input-group-sm">
@@ -27,13 +34,6 @@
           <div class="error alert alert-danger"></div>
         </div>
       </div>
-    </div>
-    <div id="footer-wrapper">
-      <footer id="footer">
-        <div class="container">
-          Slave URL: <span id="peerUrl">Loading...</span>
-        </div>
-      </footer>
     </div>
   </body>
   </html>
