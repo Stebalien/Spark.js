@@ -136,8 +136,6 @@ var server = {
         data.peerJobID = job.peerID;
       } else if (req.session.peerJobID) {
         job = this.peerJobs[req.session.peerJobID];
-      } else {
-        return;
       }
 
       data.jobID = job.id;

@@ -222,7 +222,7 @@ define(['blockmanager', 'underscore', 'codelog'], function(BlockManager, _, Code
     },
 
     Volunteer: function() {
-      if (!this.activeOnJob) {
+      if (this.activeOnJob) {
         return;
       }
 
