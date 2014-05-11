@@ -27,6 +27,11 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
   }
 
   Peer.prototype = {
+    Call: function(method, data, callback) {
+      data.jobID = this.jobID;
+      this.socket.emit(method, data, callback)
+    },
+
     CreatePeerConnectionForOfferer: function(socketID) {
       var connection = this.CreatePeerConnection(socketID);
       connection.InitForOfferer(this.SendIceCandidate.bind(this));

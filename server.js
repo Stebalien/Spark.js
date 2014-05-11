@@ -106,7 +106,7 @@ var server = {
     this.app.get(/^\/peer\/([a-z0-9]+)$/, function(req, res) {
       var peerJobID = req.params[0];
       if (!this.JobExistsForPeer(peerJobID)) {
-        // TODO: display some kind of error 
+        res.sendfile(__dirname + '/client/error.html');
         return;
       }
 
