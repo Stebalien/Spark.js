@@ -52,7 +52,9 @@ var server = {
   },
 
   HandlePing: function(sessionID) {
-    this.peers[sessionID] && this.peers[sessionID].UpdatePingTime();
+    if (this.peers[sessionID]) {
+      this.peers[sessionID].UpdatePingTime();
+    }
   },
 
   Init: function() {
@@ -189,11 +191,10 @@ var server = {
 
       delete this.peers[req.sessionID];
       delete this.sockets[peer.socketID];
-      delete peer;
     }.bind(this));
 
     var checkMaster = function checkMaster(req) {
-      var peer = this.GetPeer(req.sessionID)
+      var peer = this.GetPeer(req.sessionID);
       return peer && peer.IsMaster();
     }.bind(this);
 
@@ -292,14 +293,6 @@ var server = {
     this.sockets = {};
   },
 
-  PeerCount: function() {
-    var count = 0;
-    for (peer in this.peers) {
-      count++;
-    }
-    return count;
-  },
-
   PeersForJob: function(jobID) {
     return this.jobs[jobID].GetPeers();
   },
@@ -365,7 +358,7 @@ Job.prototype = {
   },
 
   GetPeerIds: function() {
-    if (this.volunteers.length == 0) {
+    if (this.volunteers.length === 0) {
       return [];
     }
     return _.pluck(this.volunteers, 'id');
