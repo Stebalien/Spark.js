@@ -192,15 +192,24 @@ var server = {
       delete peer;
     }.bind(this));
 
+    var checkMaster = function checkMaster(req) {
+      var peer = this.GetPeer(req.sessionID)
+      return peer && peer.IsMaster();
+    }.bind(this);
+
     this.app.io.route('consolelog', {
       'record': function(req) {
-        var jobID = req.data.jobID || req.session.jobID;
-        this.consoleLog.Record(jobID, req.data.entry);
+        if (checkMaster(req)) {
+          var jobID = req.data.jobID || req.session.jobID;
+          this.consoleLog.Record(jobID, req.data.entry);
+        }
       }.bind(this),
 
       'replay': function(req) {
-        var jobID = req.data.jobID || req.session.jobID;
-        req.io.respond(this.consoleLog.Replay(jobID));
+        if (checkMaster(req)) {
+          var jobID = req.data.jobID || req.session.jobID;
+          req.io.respond(this.consoleLog.Replay(jobID));
+        }
       }.bind(this)
     });
 

@@ -34,3 +34,7 @@
   cursor: pointer;
   vertical-align: middle;
 }
+
+.loaded {
+  visibility: hidden;
+}
