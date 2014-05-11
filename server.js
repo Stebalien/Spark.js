@@ -13,10 +13,11 @@ var server = {
   eventHandlers: {},
   blockManager: null,
 
-  AddNewPeer: function(sessionID, job, socket) {
+  AddNewPeer: function(sessionID, jobID, socket) {
     var peer = new Peer(sessionID, jobID, socket);
     this.peers[sessionID] = peer;
     this.sockets[socket.id] = socket;
+    return peer;
   },
 
   AddJob: function() {
@@ -35,16 +36,8 @@ var server = {
   },
 
   CreatePingData: function(peer) {
-    if (_.isEmpty(this.jobs)) {
-      return {
-        alljobs: {}
-      };
-    }
-
-    var jobIDs = _.pluck(this.jobs, 'id');
-    var jobs = _.invoke(this.jobs, 'Serialize');
     return {
-      alljobs: _.object(jobIDs, jobs)
+      jobID: peer.jobID
     };
   },
 
@@ -73,7 +66,7 @@ var server = {
       next();
     });
 
-    this.app.io.sockets.on('connection', function(socket) {
+    this.app.io.sockets.on('connection', function(socket, data) {
       this.sockets[socket.id] = socket;
       this.SendReliable(socket, {type: 'connected', socketID: socket.id});
     }.bind(this));
@@ -88,6 +81,7 @@ var server = {
     this.app.get('/', function(req, res) {
       req.session.start = new Date().toString();
       var job = this.AddJob();
+      req.session.jobID = job.id;
       // TODO: display peer id somewhere
       this.blockManager.CreateJob(job.id);
       res.redirect('/master/' + job.id);
@@ -131,6 +125,9 @@ var server = {
     this.app.io.route('ping', function(req) {
       server.HandlePing(req.sessionID);
       var peer = this.GetPeer(req.sessionID);
+      if (!peer) {
+        peer = this.AddNewPeer(req.sessionID, req.session.jobID, req.socket);
+      }
       this.SendToPeer(req.socket, req.sessionID, 'ping', this.CreatePingData(peer));
     }.bind(this));
 
@@ -177,7 +174,7 @@ var server = {
     this.app.io.route('blockmanager', {
       'get': function(req) {
         var id = req.data.id;
-        var jobID = req.data.jobID;
+        var jobID = req.data.jobID || req.session.jobID;
         this.blockManager.Get(jobID, id, function(socketIDs) {
           req.io.respond(socketIDs);
         });
@@ -185,7 +182,7 @@ var server = {
 
       'put': function(req) {
         var id = req.data.id;
-        var jobID = req.data.jobID;
+        var jobID = req.data.jobID || req.session.jobID;
         var socketID = req.socket.id;
         this.blockManager.Put(jobID, id, socketID);
       }.bind(this)

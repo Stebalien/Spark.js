@@ -97,6 +97,9 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     },
 
     HandlePing: function(message) {
+      if (!this.jobID && message.jobID) {
+        this.jobID = message.jobID;
+      }
       var jobs = message.alljobs;
       var existingJobIDs = _.keys(this.jobs);
 

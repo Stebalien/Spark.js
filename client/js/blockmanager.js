@@ -43,7 +43,8 @@ define([], function() {
     }
 
     var message = {
-      id: id
+      id: id,
+      jobID: this.peer.jobID
     };
 
     // Don't know where it is; ask the server
