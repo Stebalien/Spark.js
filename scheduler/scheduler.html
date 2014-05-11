@@ -160,12 +160,16 @@ Scheduler.prototype = {
 		   children = mapPartitionToChildren[node];
 		   numChildren = children.lengh;
 		   if node in mapNodeToChildrenExplored {
+			//this is a split node
 			// this has been computed by somebody else so we make it a source
 			sources.push(node);
+			// find out which child it is it
 			int count = mapNodeToChildrenExplored[node];
-			if (count < children.length) {
+			// check that we are not the last child
+			if (count < numChildren {
 				newNode = children[count];
-				mapNodeToChildrenExplored [node] +=1; 
+				mapNodeToChildrenExplored [node] +=1;
+				// if there are more children left, we add the node for the children to compute 
 				if (count + 1 != children.length) [
 					nodeQueue.push(node);
 				}	
@@ -196,6 +200,7 @@ Scheduler.prototype = {
 		  parents = mapPartitionToParent[node];
 		  numParents  = mapPartitionToParent[newNode].length;
 		  if (numParents > 1) {
+			//this is a join
 	          	if (newNode in  mapNodesExplored) {
 			//we are not the first child in the join
 			 this.sink.push(node);
@@ -213,6 +218,7 @@ Scheduler.prototype = {
 		
 			}
 		 }
+		 // just one parent so we keep traversing down
 		 else {
 		    node = newNode;
 		 }
