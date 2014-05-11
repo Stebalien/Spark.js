@@ -293,8 +293,8 @@ define(['blockmanager', 'underscore', 'codelog'], function(BlockManager, _, Code
       }
     },
 
-    DisconnectFromJob: function(jobID) {
-      this.socket.emit('leave_job', {jobID: jobID});
+    DisconnectFromJob: function() {
+      this.socket.emit('leave_job', {jobID: this.jobID});
     },
 
     ConnectToPeer: function(socketID, callback) {
