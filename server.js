@@ -1,6 +1,7 @@
 var express = require('express.io');
 var url = require('url');
 var BlockManager = require('./blockmanager.js');
+var ConsoleLog = require('./consolelog.js');
 var _ = require('underscore');
 var crypto = require('crypto');
 
@@ -12,6 +13,7 @@ var server = {
   app: null,
   eventHandlers: {},
   blockManager: null,
+  consoleLog: null,
 
   AddNewPeer: function(sessionID, jobID, socket) {
     var peer = new Peer(sessionID, jobID, socket);
@@ -57,6 +59,7 @@ var server = {
     this.app = express();
     this.app.http().io();
     this.blockManager = new BlockManager();
+    this.consoleLog = new ConsoleLog();
 
     this.app.use(express.cookieParser());
     var store = new express.session.MemoryStore();
@@ -185,6 +188,18 @@ var server = {
       delete this.sockets[peer.socketID];
       delete peer;
     }.bind(this));
+
+    this.app.io.route('consolelog', {
+      'record': function(req) {
+        var jobID = req.data.jobID || req.session.jobID;
+        this.consoleLog.Record(jobID, req.data.entry);
+      }.bind(this),
+
+      'replay': function(req) {
+        var jobID = req.data.jobID || req.session.jobID;
+        req.io.respond(this.consoleLog.Replay(jobID));
+      }.bind(this)
+    });
 
     this.app.io.route('blockmanager', {
       'get': function(req) {
