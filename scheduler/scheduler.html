@@ -38,7 +38,11 @@ Scheduler.prototype = {
     return newarray;
   }
   
-  
+  // this function is responsible for assigning a work to a specific
+  // TODO: the actual logic of this method still needs to be implemented
+  AssignWorker: function(worker, task){
+	// tell the worker about the task it is going to be assigned 
+  } 
   
   // this function is responsible for adding a worker to the scheduler
   // TODO: this function needs to be called athe appropriate time
@@ -137,7 +141,9 @@ Scheduler.prototype = {
       this.mapWorkToTime[workerId] = currentTime
       this.mapWorkerToTasks[workerId] = RemoveFromArray(this.mapWorkerToTasks[workerId], taks);	
   }
-  
+ 
+  GenerateTask :   
+ 
   // this method is responsible for checking that the worker is done with its task 
   // if it is not done in a reasonable time, then we reassign its tasks to someone else
   AlertTimeOut : function() {
@@ -147,7 +153,8 @@ Scheduler.prototype = {
 	   console.log("we have to drop this worker)
 	   tasks = this.mapWorkerToTasks[key];
 	   for (var task in tasks) {
-		AssignTaks(task);
+		worker = SelctWorker();
+		AssignWorker(worker,tasks)
 	   }
 	   delete this.mapWorkerToTasks[key]
 	   delete this.mapWorkToTime[key]
