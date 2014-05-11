@@ -4,6 +4,7 @@ var BlockManager = require('./blockmanager.js');
 var ConsoleLog = require('./consolelog.js');
 var _ = require('underscore');
 var crypto = require('crypto');
+var CodeLog = require('./codelog.js');
 
 var server = {
   peers: {},
@@ -14,21 +15,24 @@ var server = {
   eventHandlers: {},
   blockManager: null,
   consoleLog: null,
+  codeLog: null,
 
   AddNewPeer: function(sessionID, jobID, socket, isMaster) {
     var peer = new Peer(sessionID, jobID, socket, isMaster);
     this.peers[sessionID] = peer;
     this.sockets[socket.id] = socket;
-    if (isMaster) {
-      this.jobs[jobID].AddMaster(peer);
-    } else {
-      this.jobs[jobID].AddPeer(peer);
+    if (jobID in this.jobs) {
+      if (isMaster) {
+        this.jobs[jobID].AddMaster(peer);
+      } else {
+        this.jobs[jobID].AddPeer(peer);
+      }
     }
     return peer;
   },
 
   AddJob: function() {
-    var job = new Job();
+    var job = new Job(this);
     this.jobs[job.id] = job;
     this.peerJobs[job.peerID] = job;
     return job;
@@ -66,6 +70,7 @@ var server = {
     this.app = express();
     this.app.http().io();
     this.blockManager = new BlockManager();
+    this.codeLog = new CodeLog();
     this.consoleLog = new ConsoleLog();
 
     this.app.use(express.cookieParser());
@@ -208,6 +213,7 @@ var server = {
         if (checkMaster(req)) {
           var jobID = req.data.jobID || req.session.jobID;
           this.consoleLog.Record(jobID, req.data.entry);
+          this.AddToCodeLog(jobID, req.data.entry);
         }
       }.bind(this),
 
@@ -325,6 +331,10 @@ var server = {
     }
 
     return this.jobs[jobID].GetMaster();
+  },
+
+  AddToCodeLog: function(jobID, entry) {
+    this.codeLog.AddEntry(jobID, entry);
   }
 };
 
@@ -348,12 +358,13 @@ Peer.prototype = {
   }
 };
 
-function Job() {
+function Job(server) {
   var seed = crypto.randomBytes(20);
   this.id = crypto.createHash('sha1').update(seed).digest('hex');
   this.peerID = crypto.createHash('sha1').update(this.id).digest('hex');
   this.volunteers = [];
   this.master = null;
+  this.codeLog = server.codeLog.CreateForJob(this.id);
 }
 
 Job.prototype = {
