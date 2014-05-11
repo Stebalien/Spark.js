@@ -34,7 +34,7 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
     peer.Call('consolelog:replay', {}, function(logItems) {
       $(document).ready(function() {
         // Add peer url.
-        var peerURL = location.origin + '/slave/' + peer.GetPeerID();
+        var peerURL = location.origin + '/peer/' + peer.GetPeerID();
         $("#peerUrl").replaceWith($("<a>", {text: peerURL, href: peerURL}));
 
         // Setup console.
