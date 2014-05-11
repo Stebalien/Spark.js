@@ -44,7 +44,7 @@ define(["underscore"], function(_) {
         }
       }
     });
-  };
+  }
 
   RPC.prototype.call = function(name) {
     var id = this._nextId++;
@@ -55,7 +55,7 @@ define(["underscore"], function(_) {
     } else {
       cb = undefined;
     }
-    this._waiting[id] = cb
+    this._waiting[id] = cb;
     this._port.send("call", {
       id: id,
       fn: name,

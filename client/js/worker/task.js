@@ -7,7 +7,7 @@ define(["underscore", "worker/rpc", "worker/rddmanager"], function(_, rpc, RDDMa
     this.submitted = false;
     this.id = nextTaskId++;
     this.expired = self.initializing && !self.outstandingTasks[taskId];
-  };
+  }
 
   Task.prototype.collect = function collect(cb) {
     var taskContext = {
@@ -22,7 +22,7 @@ define(["underscore", "worker/rpc", "worker/rddmanager"], function(_, rpc, RDDMa
     if (this.submitted) return;
     this.submitted = true;
 
-    var targets = _.pluck(this.rdd.partitions, "id")
+    var targets = _.pluck(this.rdd.partitions, "id");
     var rdds = [];
     var rdd;
     while (rdd = RDDManager.getRDD(nextRDD)) {
@@ -35,9 +35,9 @@ define(["underscore", "worker/rpc", "worker/rddmanager"], function(_, rpc, RDDMa
           dependencies: _.pluck(part.dependencies, "id")
         };
       }));
-    };
+    }
 
     rpc.call("submitTask", this.id, rdds, targets);
-  }
+  };
   return Task;
 });

@@ -3,7 +3,7 @@ define(function() {
   function MasterTaskManager(peer) {
     this.cachedCode = "";
     this.peer = peer;
-  };
+  }
 
   MasterTaskManager.prototype.submitTask = function submitTask(id, rdds, targets) {
     this.peer.submitTask({

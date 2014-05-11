@@ -16,7 +16,7 @@ define(["worker"], function(Worker) {
         peer.blockManager.Put(key, value, persist);
       }
     });
-  };
+  }
 
   SparkWorker.prototype = Object.create(Worker.prototype);
   SparkWorker.prototype.constructor = SparkWorker;

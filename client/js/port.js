@@ -7,7 +7,7 @@ define(["EventEmitter"], function(EventEmitter) {
       var data = event.data;
       that._port.emitEvent(data.event, [data.value]);
     });
-  };
+  }
 
   Port.prototype.on = function(name, cb) {
     return this._port.on(name, cb);

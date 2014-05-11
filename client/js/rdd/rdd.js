@@ -104,7 +104,7 @@ define(["underscore", "util", "worker/task", "worker/rddmanager", "worker/goalma
       this.__description__.__rdd__ = this;
       // Immutable (to make it deterministic and to avoid interference).
       util.deepFreeze(this);
-    };
+    }
 
     RDDImpl.prototype = Object.create(RDD.prototype);
     RDDImpl.prototype.constructor = RDDImpl;
@@ -130,7 +130,7 @@ define(["underscore", "util", "worker/task", "worker/rddmanager", "worker/goalma
           }
         }
     };
-  };
+  }
 
   RDD.extend("iterate", function(taskContext, partition, processor) {
     if (partition.rdd.id !== this.id) {

@@ -19,11 +19,12 @@ function(RDD, WorkerConsole, util, _) {
       // "magic"
       coalesceRate = 1000000;
     }
+    var mapFn = function(values) {
+      return [_.reduce(values, fn, zero)];
+    };
     while (true) {
       // Map
-      that = that.mapPartitions(function(values) {
-        return [_.reduce(values, fn, zero)];
-      });
+      that = that.mapPartitions(mapFn);
       // Check if done...
       if (that.partitions.length == 1) {
         break;
@@ -67,7 +68,7 @@ function(RDD, WorkerConsole, util, _) {
 
 
   if (self.isMaster) {
-    function display(rdd, type) {
+    var display = function(rdd, type) {
       // Wait
       _.defer(function() {
         var id = rdd._collect(function(values) {
@@ -75,7 +76,7 @@ function(RDD, WorkerConsole, util, _) {
         });
         WorkerConsole.promiseResult(id, type);
       });
-    }
+    };
 
     RDD.extend("print", function() {
       display(this, 'json');

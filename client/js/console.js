@@ -64,7 +64,7 @@ define([
         that.emit("exec");
       }
     });
-  };
+  }
 
   Console.prototype = Object.create(EventEmitter.prototype);
   Console.prototype.constructor = Console;

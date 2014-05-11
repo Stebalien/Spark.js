@@ -19,7 +19,7 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
             processor.process(piece);
           });
         },
-        done: function() { processor.done() }
+        done: processor.done
       });
     },
   });

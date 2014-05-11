@@ -23,7 +23,7 @@ define([], function() {
       return;
     }
     callback(null);
-  }
+  };
 
   BlockManager.prototype.Get = function(id, callback) {
     // Cached locally

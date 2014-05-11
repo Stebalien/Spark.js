@@ -9,7 +9,7 @@ function(_,             RPC,   Port) {
     this._port.once('ready', function() {
       that._ready = true;
     });
-  };
+  }
   Worker.prototype.send = function() {
     var that = this;
     if (!this._ready) {

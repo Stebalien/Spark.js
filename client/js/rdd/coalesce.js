@@ -61,16 +61,14 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
               // Empty my cache first if it has any items.
               if (lcache && lcache.length) {
                 _.each(lcache, function(item) {
-                  processor.process(item)
+                  processor.process(item);
                 });
                 lcache = null;
               }
               // Empty other caches (but maintian control of the victim pointer).
               var localVictim = victim;
               while (cache[++localVictim]) {
-                _.each(cache[localVictim], function(item) {
-                  processor.process(item)
-                });
+                _.each(cache[localVictim], processor.process);
                 cache[localVictim] = null;
               }
               // now we can give up control.

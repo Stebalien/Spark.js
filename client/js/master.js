@@ -76,7 +76,7 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
                 taskManager.recordCode(text);
                 c.displayError(error);
             }
-            c.unlock()
+            c.unlock();
           });
         });
       });

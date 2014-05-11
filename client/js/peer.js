@@ -29,7 +29,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
   Peer.prototype = {
     Call: function(method, data, callback) {
       data.jobID = this.jobID;
-      this.socket.emit(method, data, callback)
+      this.socket.emit(method, data, callback);
     },
 
     CreatePeerConnectionForOfferer: function(socketID) {
@@ -65,7 +65,9 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
 
     Init: function(data, ack) {
       // Notify server that message has been received
-      ack && ack();
+      if (ack) {
+        ack();
+      }
 
       this.Volunteer();
       if (this.init) {
@@ -285,7 +287,9 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
 
     Disconnect: function() {
       this.socket.disconnect();
-      this.PingTimeout && clearTimeout(this.PingTimeout);
+      if (this.PingTimeout) {
+        clearTimeout(this.PingTimeout);
+      }
     },
 
     DisconnectFromJob: function(jobID) {
@@ -296,13 +300,15 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       if (!this.connections[socketID]) {
         this.SendOffer(socketID);
 
-        callback && this.Once('channel_opened', {
-          handler: callback,
-          data: {
-            localSocketID: this.socketID,
-            remoteSocketID: socketID
-          }
-        });
+        if (callback){
+          this.Once('channel_opened', {
+            handler: callback,
+            data: {
+              localSocketID: this.socketID,
+              remoteSocketID: socketID
+            }
+          });
+        }
       } else if (this.connection[socketID].ChannelOpened()) {
         callback();
       }
@@ -444,7 +450,9 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         new RTCSessionDescription(remoteDescription)
       );
       this.remoteDescriptionSet = true;
-      this.candidate && this.AddIceCandidate(this.candidate);
+      if (this.candidate) {
+        this.AddIceCandidate(this.candidate);
+      }
       this.SendAnswer(sockets, callback);
     },
 
@@ -460,7 +468,9 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         new RTCSessionDescription(description)
       );
       this.remoteDescriptionSet = true;
-      this.candidate && this.AddIceCandidate(this.candidate);
+      if (this.candidate) {
+        this.AddIceCandidate(this.candidate);
+      }
     },
 
     AddIceCandidate: function(candidate) {
@@ -488,7 +498,9 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         message.originalSender = this.localSocketID;
       }
       message.seqID = this.seqID;
-      this.channelOpened && this.channel.send(JSON.stringify(message));
+      if (this.channelOpened) {
+        this.channel.send(JSON.stringify(message));
+      }
       this.seqID++;
     },
 

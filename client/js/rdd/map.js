@@ -16,7 +16,7 @@ define(["rdd/rdd", "underscore"], function(RDD, _) {
         process: function(item) {
           processor.process(that.fn(item));
         },
-        done: function() { processor.done() }
+        done: processor.done
       });
     },
   });

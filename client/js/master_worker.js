@@ -25,7 +25,7 @@ require(["underscore", "worker/rpc", "worker/port", "rdd"], function(_, rpc, por
       cb(status, e.toString());
       return;
     }
-    cb("success")
+    cb("success");
   });
   port.send("ready");
 });
