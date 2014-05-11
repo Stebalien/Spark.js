@@ -67,22 +67,27 @@ Scheduler.prototype = {
 	return bestWorker
   }
 
-  // this function is responsible for removing nodes from the mapPartitiontoParent
-  //that do not have any parents so we can get some vertices to start with 
-  Initialize: function(partitionlist) {
-    for (var i = 0; i<partitionlist.length; i++) {
-      partition = partition[i];
+  // this function is for finding the nodes that serve as the sources
+  // it does by seeing the nodes that it does not have any parents 
+  FindSources: function() {
+    rootNodes = [];
+    for (var partition: this.mapPartitionToParent) {
  	if (this.mapPartitionToParent[partition].length == 0) {
-          delete this.mapPartitionToParent(partition);
+	  rootNodes.push(partition);   
 	} 
-
-     }
+    }
+    return rootNodes;
   }
- 
+
+  // returns a boolean if the function is cached
+  // TODO check that the function is cached
+  IsCached :function(partiton) {
+	return false;
+  } 
   // this function is instrumental in pruning the total graph 
   // it starts at the targets and basically traverses the graph
   // until all of the dependencies are added 
-  PruneFunction: () {
+  PruneFunction: function() {
 	// these are the maps that will represent the pruned maps
 	var mapChildren = {}
         var mapParent = {}
@@ -92,6 +97,10 @@ Scheduler.prototype = {
 	for (targets.length == 0){
 	   // taking a node and adding all of its parents in the graph
 	   target = targets[0];
+	   if (isCached(target)) {
+		mapParent[target] = [];
+		continue;
+	   }
 	   parents = this.mapPartitionToParent[target];
 	   if (target not in mapParent){
 		mapParent[target] = parents;
@@ -149,7 +158,8 @@ Scheduler.prototype = {
 	// this is useful so we know what a map has to be; this is useful for split 
 	mapNodeToChildrenExplored = {}	
 	// this is basically the queue that we need to process
-        nodeQueue
+	// it is initalize with the sources
+        nodeQueue = FindSources();
 	// this is useful for the map of nodes explored 
 	mapNodesExplored = {}
 	for (nodeQueue.length == 0) {
