@@ -38,3 +38,7 @@
 .loaded {
   visibility: hidden;
 }
+
+body {
+  padding-bottom: 150px;
+}

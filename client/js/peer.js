@@ -101,6 +101,7 @@ define(['blockmanager', 'underscore', 'codelog'], function(BlockManager, _, Code
         case 'new_peer':
           this.ConnectToPeer(message.socketID);
           //this.SendOffer(message);
+          this.Emit('new_peer', message.socketID);
           break;
         case 'added_to_job':
           this.Emit('added_to_job', message);

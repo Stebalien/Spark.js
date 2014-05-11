@@ -25,8 +25,8 @@ require.config({
   }
 });
 
-require(["underscore", "jquery", "console", "spark_worker", "util", "mastertaskmanager", "peer"],
-function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskManager, Peer) {
+require(["underscore", "jquery", "console", "spark_worker", "util", "mastertaskmanager", "peer", "master_dashboard"],
+function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskManager, Peer, MasterDashboard) {
 
   var peer = new Peer();
   var taskManager = new MasterTaskManager(peer);
@@ -36,6 +36,9 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
         // Add peer url.
         var peerURL = location.origin + '/peer/' + peer.GetPeerID();
         $("#peerUrl").replaceWith($("<a>", {text: peerURL, href: peerURL}));
+
+        var dashboard = new MasterDashboard(peer);
+        dashboard.Init();
 
         // Setup console.
         var c = new Console($(".repl"), logItems);
