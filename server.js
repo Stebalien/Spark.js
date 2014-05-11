@@ -2,6 +2,7 @@ var express = require('express.io');
 var url = require('url');
 var BlockManager = require('./blockmanager.js');
 var _ = require('underscore');
+var crypto = require('crypto');
 
 var server = {
   peers: {},
@@ -11,11 +12,11 @@ var server = {
   eventHandlers: {},
   blockManager: null,
 
-  AddNewPeer: function(sessionID, jobID, socket) {
-    var peer = new Peer(sessionID, jobID, socket);
+  AddNewPeer: function(sessionID, job, socket) {
+    var peer = new Peer(sessionID, job.id, socket);
     this.peers[sessionID] = peer;
     if (!(jobID in this.jobs)) {
-      this.jobs[jobID] = new Job('testname');
+      this.jobs[jobID] = job;
     }
     this.jobs[jobID].AddPeer(peer);
     this.sockets[socket.id] = socket;
@@ -74,7 +75,8 @@ var server = {
     // Client should access this route to submit a new RDD
     this.app.get('/', function(req, res) {
       req.session.start = new Date().toString();
-      // TODO: Create Job Here
+      // TODO: redirect
+      var job = new Job();
       // Assign both master id and slave id (we can just use SHA256(masterId)
       // as the slave id).
       // Redirect to /master/masterJobId.html
@@ -288,10 +290,9 @@ Peer.prototype = {
   }
 };
 
-var jobID = 1;
-function Job(name) {
-  this.id = jobID++;
-  this.name = name;
+function Job() {
+  var seed = crypto.randomBytes(20);
+  this.id = crypto.createHash('sha1').update(seed).digest('hex');
   this.volunteers = [];
 }
 
@@ -320,7 +321,6 @@ Job.prototype = {
   Serialize: function() {
     return {
       id: this.id,
-      name: this.name,
       peers: this.GetPeerIds()
     };
   }
