@@ -64,7 +64,6 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
             switch(status) {
               case "success":
                 c.displayCode(text);
-                taskManager.recordCode(text);
                 c.setText("");
                 break;
               case "invalid_syntax":
@@ -73,7 +72,6 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
               case "error":
                 c.displayCode(text);
                 c.setText("");
-                taskManager.recordCode(text);
                 c.displayError(error);
             }
             c.unlock();
