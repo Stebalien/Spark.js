@@ -4,7 +4,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
 
   var servers = {
     iceServers: [{
-      url: 'turn:http://localhost:5000'
+      url: 'turn:'+location.origin
     }]
   };
 
@@ -14,7 +14,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     }]
   };
 
-  var serverURL = 'http://localhost:5000';
+  var serverURL = location.origin;
 
   function Peer() {
     this.socket = null;
