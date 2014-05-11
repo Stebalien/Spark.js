@@ -1,9 +1,12 @@
+<html>
+<script type="text/javascript">
 function Scheduler(server){
   this.server = server;
   // this object represents a map of work to time
   // it is used to do timeout analysis 
   this.mapWorkToTime = {}; 
-  // this represents how long it takes before we timeout a variable
+  // this represents how long it takes before we timeout a worker
+  // this time is in ms; we use this to timeout another worker 
   this.timeOutTime = 1000;
 
   // this map is used to map a parition to whatever is dependent on it
@@ -18,6 +21,10 @@ function Scheduler(server){
   
   // this maps a worker to the tasks that we assign it
   this.mapWorkerToTasks = {} 
+
+  // this is the list of the targets we want to compute
+  this.targets = {}
+
 }
 
 Scheduler.prototype = {
@@ -30,23 +37,26 @@ Scheduler.prototype = {
     }
     return newarray;
   }
-
+  
+  
+  
   // this function is responsible for adding a worker to the scheduler
+  // TODO: this function needs to be called athe appropriate time
   AddWorker: function(worker) {
 	var tasks = [];
 	this.mapWorkerToTasks[worker] = tasks;
   }
 
   // this function is responsible for selecting the worker that should be assigned a task
-  // basically right now it will select the worker with the minimum amount of tasks
-  // this should be later optimized 
+  // as of now, I select the worker with the least number of tasks 
   SelctWorker : function()  {
 	minTasks = 100000;
 	var bestWorker = null;
-        for (var key in this.mapWorkToTime) {
-	        count = this.mapWorkToTime[key].length;
+        for (var key in this.mapWorkerToTasks) {
+	        count = this.mapWorkerToTasks[key].length;
 		if (count < minTasks){
 		  bestWorker = key;
+		  minTasks = count;
 		}	
 
 	}	
@@ -63,9 +73,44 @@ Scheduler.prototype = {
 	} 
 
      }
-
   }
-
+ 
+  // this function is instrumental in pruning the total graph 
+  // it starts at the targets and basically traverses the graph
+  // until all of the dependencies are added 
+  PruneFunction: () {
+	// these are the maps that will represent the pruned maps
+	var mapChildren = {}
+        var mapParent = {}
+	targets = this.targets
+	// we are  using the targets as a queuue
+	// basically waiting till it is empty
+	for (targets.length == 0){
+	   // taking a node and adding all of its parents in the graph
+	   target = targets[0];
+	   parents = this.mapPartitionToParent[target];
+	   if (target not in mapParent){
+		mapParent[target] = parents;
+	   }
+	   for (var parent in parents) {
+		// adding the parent to the queue so we further iterate up the tree	
+		if (targets.indexOf(parent) != -1) {
+		   targets.push(parent);
+		}
+		// making sure that we are the children of our parent
+		if (parent not in mapChildren) {
+		   newArray = [target];
+		   mapChildren[parent] = newarray
+		}
+		else{
+		   mapChildren[parent].push(target)
+		}
+	   } 	   
+	   target = RemoveFromArray(target, 0);
+  	}
+	this.mapPartitionToParent = mapParent;
+	this.mapPartitionToChilrden = mapChildren;
+  }
   // this function is responsible for removing nodes from the graph
   // we go through all of its children and remove the dependency of that child in the parent graph
   // if the child no longer has any parents, we remove it from the mapPartitionToParent
@@ -83,19 +128,14 @@ Scheduler.prototype = {
   }
 
 
-  RemoveTask: function(task) {
-    for (var i = 0; i < task.nodes.length; i++) {
-      RemoveNode(task.nodes[i]);
-    } 		  
-  }  
-
-  //the code that finishes the task 
+  // the code that finishes the task 
+  // it updates the last time we have heard from the worker
+  // this also updates the worker to task map 
   FinishTask: function(workerId, task) {
       // code when one receives a new task Id
       var currentTime =  new Date().getTime();
       this.mapWorkToTime[workerId] = currentTime
-      RemoveTask(task)
-    	
+      this.mapWorkerToTasks[workerId] = RemoveFromArray(this.mapWorkerToTasks[workerId], taks);	
   }
   
   // this method is responsible for checking that the worker is done with its task 
@@ -115,14 +155,7 @@ Scheduler.prototype = {
    }
 }
 
-  
-  // creates the task based on the partition
-  CreateTask: function(workerId, task, partitionList) {
-     // code for actually assigned a workerto a given task
-  
-  }
-
-  //Builds partition dependencies based on json object 
+   //Builds partition dependencies based on json object 
   //See example-submission.json
   BuildDependencyTree: function(submission) {
     var json = JSON.parse(submission);
@@ -166,26 +199,8 @@ Scheduler.prototype = {
 // the sink is the last partition to analyze
 // the nodes is a list of partitions for the worker to analyze
     
-function Task(sources, sink, nodes) 
-  this.source = source;
+function Task(sources, sink) 
+  this.sources = sources;
   this.sink = sink; 
-  this.nodes = nodes;
-}
-
-// the time that it currently is
-function getTime() {
-   var currentTime =  new Date().getTime();
-}
-
-
-//this method is responsible for checking that the worker is done with its task 
-function alterTime() {
-   for (var key in mapWorkToTime) {
-	oldTime = mapWorkToTime[key];
-	if (getTime() > oldTime + timeOutTime) {
-	   console.log("we have done the appropriate log out time")
-	}
-   }
-}
-
-
+</script>
+</head>
