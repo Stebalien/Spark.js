@@ -23,7 +23,6 @@ define(["peer", "blockmanager", "jquery", "bootstrap", "underscore"], function(P
         row.append(peerIDCol);
         row.append(socketIDCol);
         row.append($('<td><span class="label label-success">Connected</span></td>'));
-        row.append($('<td></td>'));
 
         this.peerList[peerID] = row;
         $('#peer-list').append(row);
