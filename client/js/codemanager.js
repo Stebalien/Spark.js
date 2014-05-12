@@ -25,6 +25,7 @@ define(['underscore', "util"], function(_, util) {
         this.nextToGet = id+1;
 
         this.peer.Call('codelog:get', message, function(entries) {
+          console.log("hi");
           _.each(entries, function(entry) {
             this.code[entry.id] = entry.value;
           }, this);

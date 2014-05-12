@@ -79,17 +79,12 @@ var server = {
     this.app.io.route(name, newRoutes);
   },
 
-  iomasterroute: function(name, routes) {
-    var newRoutes = {};
-    for (var route in routes) {
-      newRoutes[route] = function(req) {
-        if (this.Preprocess(req) && req.peer && req.peer.IsMaster()) {
-          routes[route](req);
-        }
-      }.bind(this);
-    }
-
-    this.app.io.route(name, newRoutes);
+  iomasterroute: function(name, callback) {
+    this.app.io.route(name, function(req) {
+      if (this.Preprocess(req) && req.peer && req.peer.IsMaster()) {
+        callback(req);
+      }
+    }.bind(this));
   },
 
   Preprocess: function(req) {
@@ -97,6 +92,7 @@ var server = {
       return false;
     }
 
+    console.log(req.data);
     // Only the master knows this ID
     var masterID = req.data.masterID;
     if (masterID) {
@@ -302,17 +298,15 @@ var server = {
       delete this.sockets[peer.socketID];
     }.bind(this));
 
-    this.iomasterroute('consolelog', {
-      'record': function(req) {
-        var jobID = req.job.id;
-        this.consoleLog.Record(jobID, req.data.entry);
-        this.AddToCodeLog(jobID, req.data.entry);
-      }.bind(this),
+    this.iomasterroute('consolelogrecord', function(req) {
+      var jobID = req.job.id;
+      this.consoleLog.Record(jobID, req.data.entry);
+      this.AddToCodeLog(jobID, req.data.entry);
+    }.bind(this));
 
-      'replay': function(req) {
-        req.io.respond(this.consoleLog.Replay(req.job.id));
-      }.bind(this)
-    });
+    this.iomasterroute('consolelogreplay', function(req) {
+      req.io.respond(this.consoleLog.Replay(req.job.id));
+    }.bind(this));
 
     this.ioroute('blockmanager', {
       'get': function(req) {

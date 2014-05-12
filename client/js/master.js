@@ -31,7 +31,7 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
   var peer = Peer.CreateMaster();
   var taskManager = new MasterTaskManager(peer);
   peer.On('master_ready', function() {
-    peer.Call('consolelog:replay', {}, function(logItems) {
+    peer.Call('consolelogreplay', {}, function(logItems) {
       $(document).ready(function() {
         // Add peer url.
         var peerURL = location.origin + '/peer/#' + peer.GetPeerJobID();
@@ -63,7 +63,7 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
           }
         });
         c.on('append', function(item) {
-          peer.Call('consolelog:record', { entry: item });
+          peer.Call('consolelogrecord', { entry: item });
         });
         c.on('exec', function() {
           c.lock();

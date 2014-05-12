@@ -10,6 +10,7 @@ function JobCodeLog(jobID) {
 
 JobCodeLog.prototype = {
   AddEntry: function(entry) {
+    console.log("ADD");
     if (entry.type == 'error') {
       return;
     }
@@ -80,6 +81,7 @@ JobCodeLog.prototype = {
       return;
     }
 
+    console.log("runcallbacks");
     _.each(pendingGets, function(pendingGet) {
       pendingGet.callback(this._getValuesInRange(pendingGet.minId, maxId));
     }.bind(this));
