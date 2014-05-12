@@ -213,14 +213,6 @@ Scheduler.prototype = {
   GetSchedule: function(targets, n) {
     console.log("scheduling...", n, targets);
     var cuts = this.CutFor(targets);
-    /*
-    console.log(_.map(cuts, function(cut) {
-      return {
-        sources: _.pluck(cut.sources, "id"),
-        sinks: _.pluck(cut.sinks, "id")
-      };
-    }));
-    */
     var heap = new Heap(function(c) { return -c.size; });
     var sourceToCut = {};
     var sinkToCut = {};
@@ -234,13 +226,14 @@ Scheduler.prototype = {
     var leftovers = [];
     while (heap.size() > 0 && (heap.size()+leftovers) > n) {
       var smallCut = heap.pop();
-      var minSourceCut = _.min(_.values(_.pick(sourceToCut, _.pluck(smallCut.sources, "id"))), function(v) {
-        return v.size;
-      });
-      if (!minSourceCut) {
+      var dependencies = _.values(_.pick(sourceToCut, _.pluck(smallCut.sources, "id")));
+      if (dependencies.length === 0) {
         leftovers.push(smallCut);
         continue;
       }
+      var minSourceCut = _.min(dependencies, function(v) {
+        return v.size;
+      });
       minSourceCut.size += smallCut.size;
       // Dumb but should work.
       minSourceCut.sources = _.union(minSourceCut.sources, smallCut.sources);
