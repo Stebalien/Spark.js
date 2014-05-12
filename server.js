@@ -27,6 +27,7 @@ var server = {
     this.jobsByMasterID[job.id] = job;
     this.jobsByPeerID[job.peerJobID] = job;
     this.blockManager.CreateJob(job.id);
+    this.codeLog.CreateForJob(job.id);
     return job;
   },
 
@@ -54,13 +55,28 @@ var server = {
   },
 
   ioroute: function(name, callback) {
-    this.app.io.route(name, function(req) {
-      if (!this.Preprocess(req)) {
-        req.io.respond('error');
-        return;
-      }
-      callback(req);
-    }.bind(this));
+    if (_.isFunction(callback)) {
+      this.app.io.route(name, function(req) {
+        if (!this.Preprocess(req)) {
+          req.io.respond('error');
+          return;
+        }
+        callback(req);
+      }.bind(this));
+      return;
+    }
+
+    var newRoutes = {};
+    for (var route in callback) {
+      newRoutes[route] = function(req) {
+        if (!this.Preprocess(req)) {
+          req.io.respond('error');
+          return;
+        }
+        callback[route](req);
+      }.bind(this);
+    }
+    this.app.io.route(name, newRoutes);
   },
 
   iomasterroute: function(name, routes) {
@@ -102,6 +118,7 @@ var server = {
       }
       req.job = job;
       req.peer = this.GetPeerFromSocket(req.socket);
+      req.peer.socket = req.socket;
       return true;
     }
 
@@ -188,7 +205,7 @@ var server = {
     }.bind(this));
 
     this.app.io.route('master', function(req, res) {
-      var masterJobID = req.data.masterJobID;
+      var masterJobID = req.data.masterID;
       var job = this.GetJobByMasterID(masterJobID);
  
       // Master is reconnecting
@@ -203,9 +220,9 @@ var server = {
       req.io.respond({masterID: job.id, peerJobID: job.peerJobID});
     }.bind(this));
 
-    this.app.get(/^\/master#([a-z0-9]+)$/, function(req, res) {
-      res.sendfile(__dirname + '/client/master.html');
-    }.bind(this));
+    //this.app.get(/^\/master#([a-z0-9]+)$/, function(req, res) {
+      //res.sendfile(__dirname + '/client/master.html');
+    //}.bind(this));
 
     // Peers access this route (any path with a '/' followed by letters/numbers)
     this.app.get(/^\/peer\/$/, function(req, res) {
@@ -220,11 +237,11 @@ var server = {
       }
 
       var peer = this.CreatePeer(job, req.socket);
+      req.io.respond(job.peerJobID);
 
       var data = {jobID: job.id};
       req.io.join(job.id);
       this.Broadcast(req.io.room(job.id), 'new_peer', {socketID: req.socket.id});
-      this.SendToPeer(peer, 'added_to_job', data);
     }.bind(this));
 
     this.ioroute('leave_job', function(req) {
@@ -313,9 +330,9 @@ var server = {
 
     this.ioroute('codelog', {
       'get': function(req) {
-        var minSeq = req.data.minSeq;
-        var maxSeq = req.data.maxSeq;
-        this.GetFromCodeLog(req.job.id, minSeq, maxSeq, function(entries) {
+        var minId = req.data.minId;
+        var maxId = req.data.maxId;
+        this.GetFromCodeLog(req.job.id, minId, maxId, function(entries) {
           req.io.respond(entries);
         }.bind(this));
       }.bind(this)

@@ -24,7 +24,7 @@ define(['underscore', "util"], function(_, util) {
         };
         this.nextToGet = id+1;
 
-        this.peer.socket.emit('codelog:get', message, function(entries) {
+        this.peer.Call('codelog:get', message, function(entries) {
           _.each(entries, function(entry) {
             this.code[entry.id] = entry.value;
           }, this);

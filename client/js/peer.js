@@ -113,7 +113,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       this.isMaster && this.socket.emit('master', data, function(ids) {
         this.masterID = ids.masterID;
         this.peerJobID = ids.peerJobID;
-        window.location.hash = 'master:'+this.masterID;
+        window.location.hash = this.masterID;
         this.Emit('master_ready');
         this.Ping();
       }.bind(this));
@@ -157,10 +157,6 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     },
 
     HandleAddedToJob: function(message) {
-      this.jobID = message.jobID;
-      if (message.peerJobID) {
-        this.peerJobID = message.peerJobID;
-      }
       this.activeOnJob = true;
     },
 
@@ -349,6 +345,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     },
 
     ConnectToPeer: function(socketID, callback) {
+      console.log(socketID);
       if (!this.connections[socketID]) {
         this.SendOffer(socketID);
 

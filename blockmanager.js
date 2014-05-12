@@ -44,8 +44,10 @@ JobBlockManager.prototype = {
       }
     }
 
-    for (var i = 0; i < this.pendingGets[partitionID].length; i++) {
-      this.pendingGets[partitionID][i](socketID);
+    if (partitionID in this.pendingGets) {
+      for (var i = 0; i < this.pendingGets[partitionID].length; i++) {
+        this.pendingGets[partitionID][i](socketID);
+      }
     }
 
     this.pendingGets[partitionID] = [];

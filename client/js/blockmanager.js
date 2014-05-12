@@ -43,12 +43,11 @@ define([], function() {
     }
 
     var message = {
-      id: id,
-      jobID: this.peer.jobID
+      id: id
     };
 
     // Don't know where it is; ask the server
-    this.peer.socket.emit('blockmanager:get', message, function(socketIDs) {
+    this.peer.Call('blockmanager:get', message, function(socketIDs) {
       for (var socketID in socketIDs) {
         this.GetFromPeer(id, socketID);
       }
