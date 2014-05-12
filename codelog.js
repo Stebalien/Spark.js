@@ -5,6 +5,7 @@ function JobCodeLog(jobID) {
   this.entries = {};
   this.minSeq = 0;
   this.pendingGets = {};
+  this.results = {};
 }
 
 JobCodeLog.prototype = {
@@ -32,15 +33,16 @@ JobCodeLog.prototype = {
         this.entries[seq].value = this.ProcessCodeEntry(entry.value);
       } else if (entry.type == 'result') {
         this.entries[seq].value = this.ProcessResultEntry(entry);
+        this.results[entry.id] = seq;
+        this.RunCallbacks(entry.id);
       }
-      this.RunCallbacks(seq);
     }
 
     this.minSeq = nextMin;
   },
 
   ProcessCodeEntry: function(code) {
-    return 'try {\n' + code + '\n} catch () {};\n'; 
+    return 'try {\n' + code + '\n} catch (__e__) {};\n'; 
   },
 
   ProcessResultEntry: function(entry) {
@@ -72,36 +74,41 @@ JobCodeLog.prototype = {
     return seq;
   },
 
-  RunCallbacks: function(maxSeq) {
-    var pendingGets = this.pendingGets[maxSeq];
+  RunCallbacks: function(maxId) {
+    var pendingGets = this.pendingGets[maxId];
     if (_.isEmpty(pendingGets)) {
       return;
     }
 
     _.each(pendingGets, function(pendingGet) {
-      pendingGet.callback(this.GetValuesInRange(pendingGet.minSeq, maxSeq));
+      pendingGet.callback(this._getValuesInRange(pendingGet.minId, maxId));
     }.bind(this));
 
-    delete this.pendingGets[maxSeq];
+    delete this.pendingGets[maxId];
   },
 
-  GetInRange: function(minSeq, maxSeq, callback) {
+  GetInRange: function(minId, maxId, callback) {
+    var maxSeq = this.results[maxId];
+    console.log(this.results);
+    console.log(minId, maxId);
     // Some seq entries are missing
-    if (maxSeq <= this.minSeq) {
-      if (!(maxSeq in this.pendingGets)) {
-        this.pendingGets[maxSeq] = [];
+    if (maxSeq === undefined || maxSeq > this.minSeq) {
+      if (!(maxId in this.pendingGets)) {
+        this.pendingGets[maxId] = [];
       }
-      this.pendingGets[maxSeq].push({
-        minSeq: minSeq,
+      this.pendingGets[maxId].push({
+        minId: minId,
         callback: callback
       });
       return;
     }
-
-    callback(this.GetValuesInRange(minSeq, maxSeq));
+    console.log("Callback");
+    callback(this._getValuesInRange(minId, maxId));
   },
 
-  GetValuesInRange: function(minSeq, maxSeq) {
+  _getValuesInRange: function(minId, maxId) {
+    var minSeq = this.results[minId];
+    var maxSeq = this.results[maxId];
     var entries = {};
     for (var seq = minSeq; seq <= maxSeq; seq++) {
       entries[seq] = this.entries[seq];
@@ -134,14 +141,14 @@ CodeLog.prototype = {
     codeLog.AddEntry(entry);
   },
 
-  GetInRange: function(jobID, minSeq, maxSeq, callback) {
+  GetInRange: function(jobID, minId, maxId, callback) {
     if (!this.JobExists(jobID)) {
       //throw new Error('CodeLog for ' + jobID + ' does not exist. GetInRange failed.');
       return;
     }
 
     var codeLog = this.jobCodeLogs[jobID];
-    codeLog.GetInRange(minSeq, maxSeq, callback);
+    codeLog.GetInRange(minId, maxId, callback);
   }
 };
 

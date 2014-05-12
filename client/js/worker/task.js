@@ -5,7 +5,7 @@ define(["underscore", "worker/rpc", "worker/rddmanager"], function(_, rpc, RDDMa
   function getTargets(partition) {
     return _.flatten(_.map(partition.dependencies, function(p) {
       var parts = getTargets(p);
-      if (part.rdd.persistLevel && part.rdd.persistLevel > 0) {
+      if (p.rdd.persistLevel && p.rdd.persistLevel > 0) {
         parts.push(p.id);
       }
       return parts;

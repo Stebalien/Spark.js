@@ -5,7 +5,7 @@ define(function() {
   }
 
   MasterTaskManager.prototype.submitTask = function submitTask(id, rdds, targets) {
-    this.peer.Call('scheduler:submit_task', {
+    this.peer.Call('submit_task', {
       id: id,
       rdds: rdds,
       targets: targets

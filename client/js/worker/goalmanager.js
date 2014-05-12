@@ -3,7 +3,7 @@ define(["underscore", "worker/blockmanager", "worker/rddmanager"], function(_, B
   var sinks = {};
 
   return {
-    submitTask: function(id) {
+    submitTask: function(task) {
       var taskContext = { sources: _.object(task.sources, _.map(task.sources, _.constant(true))) }; 
       _.chain(task.sinks)
        .map(function(sinkId) {

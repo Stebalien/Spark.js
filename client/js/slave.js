@@ -25,8 +25,8 @@ require.config({
   }
 });
 
-require(["underscore", "jquery", "console", "spark_worker", "util", "peer", "dashboard"],
-function(_,             $      ,  Console,   SparkWorker ,   util,   Peer, Dashboard) {
+require(["underscore", "jquery", "console", "codemanager", "spark_worker", "util", "peer", "dashboard"],
+function(_,             $      ,  Console,  CodeManager, SparkWorker ,   util,   Peer, Dashboard) {
   // TODO: Multiple workers.
   var peer = new Peer();
   var dashboard = new Dashboard(peer);
@@ -34,14 +34,13 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   Peer, Dashb
     dashboard.Init();
   });
   var w = new SparkWorker(peer, false); // Slave
+  var codemanager = new CodeManager(peer, w);
   peer.On("connected", function(){
     peer.On("new_task", function(task) {
-      w.call("schedule", task);
-
-      peer.codeLog.GetCodeSinceLast(task.id, function(code) {
-        for (var i = 0; i < code.length; i++) {
-          w.call('exec', code[i]);
-        }
+      console.log('on');
+      codemanager.ApplyUpdate(task.id, function() {
+        w.call("schedule", task);
+        console.log('after');
       });
     });
     peer.On("remove_sources", function(sources) {

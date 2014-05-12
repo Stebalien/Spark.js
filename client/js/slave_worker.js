@@ -4,7 +4,7 @@ importScripts("require.config-worker.js");
 
 self.isMaster = false;
 
-require(["worker/goalmanager", "worker/cachemanager", "underscore", "worker/rpc", "worker/port", "rdd"], function(GoalManager, CacheManager, _, rpc, port, RDD) {
+require(["worker/goalmanager", "underscore", "worker/rpc", "worker/port", "rdd"], function(GoalManager, _, rpc, port, RDD) {
   self.RDD = RDD;
   rpc.register("exec", function(script) {
     // Can't throw an exception.

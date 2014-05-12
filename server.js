@@ -1,4 +1,5 @@
 var express = require('express.io');
+var Scheduler = require('./scheduler.js');
 var url = require('url');
 var BlockManager = require('./blockmanager.js');
 var ConsoleLog = require('./consolelog.js');
@@ -16,6 +17,7 @@ var server = {
   blockManager: null,
   consoleLog: null,
   codeLog: null,
+  schedulers: {},
 
   AddNewPeer: function(sessionID, jobID, socket, isMaster) {
     var peer = new Peer(sessionID, jobID, socket, isMaster);
@@ -216,11 +218,13 @@ var server = {
 
     this.app.io.route('consolelog', {
       'record': function(req) {
-        if (checkMaster(req)) {
+        console.log('record.');
+        //if (checkMaster(req)) {
           var jobID = req.data.jobID || req.session.jobID;
           this.consoleLog.Record(jobID, req.data.entry);
           this.AddToCodeLog(jobID, req.data.entry);
-        }
+          console.log('code');
+        //}
       }.bind(this),
 
       'replay': function(req) {
@@ -250,18 +254,38 @@ var server = {
 
     this.app.io.route('codelog', {
       'get': function(req) {
+        console.log('get now');
         var jobID = req.data.jobID;
-        var minSeq = req.data.minSeq;
-        var maxSeq = req.data.maxSeq;
-        this.GetFromCodeLog(jobID, minSeq, maxSeq, function(entries) {
+        var minId = req.data.minId;
+        var maxId = req.data.maxId;
+        this.GetFromCodeLog(jobID, minId, maxId, function(entries) {
+          console.log('here');
           req.io.respond(entries);
         }.bind(this));
-      }
+      }.bind(this)
     });
 
-    this.app.io.route('submit_rdd', function(req) {
-      // TODO: this.blockManager.CreateJob(req.data.jobID);
-    });
+    this.app.io.route('submit_task', function(req) {
+      console.log('a');
+      //if (checkMaster(req)) {
+        console.log('b');
+        var jobID = req.data.jobID || req.session.jobID;
+        var scheduler = this.GetScheduler(jobID);
+        scheduler.AppendRDDs(req.data.rdds);
+        var cuts = scheduler.CutFor(req.data.targets);
+        var peer = this.PeersForJob(jobID)[0];
+        _.each(cuts, function(cut) {
+          peer.Send('new_task', {
+            id: req.data.id,
+            sources: _.pluck(cut.sources, "id"),
+            sinks: _.pluck(cut.sinks, "id")
+          });
+        });
+      //}
+    }.bind(this));
+  },
+  GetScheduler: function(jobID) {
+    return (this.schedulers[jobID] || (this.schedulers[jobID] = new Scheduler()));
   },
 
   Broadcast: function(room, type, data) {
@@ -353,8 +377,8 @@ var server = {
     this.codeLog.AddEntry(jobID, entry);
   },
 
-  GetFromCodeLog: function(jobID, minSeq, maxSeq, callback) {
-    this.codeLog.GetInRange(jobID, minSeq, maxSeq, callback);
+  GetFromCodeLog: function(jobID, minId, maxId, callback) {
+    this.codeLog.GetInRange(jobID, minId, maxId, callback);
   }
 };
 
@@ -375,6 +399,22 @@ Peer.prototype = {
 
   IsMaster: function() {
     return this.isMaster;
+  },
+  Send: function(type, data) {
+    var message = {
+      from: 'server',
+      sessionID: this.sessionID,
+      socketID: this.socket.id,
+      type: type
+    };
+
+    for (var key in data) {
+      if (!(key in message)) {
+        message[key] = data[key];
+      }
+    }
+
+    this.socket.emit('message', message);
   }
 };
 

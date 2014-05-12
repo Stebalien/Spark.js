@@ -1,4 +1,4 @@
-define(['blockmanager', 'underscore', 'codelog'], function(BlockManager, _, CodeLog) {
+define(['blockmanager', 'underscore'], function(BlockManager, _) {
 
   var PING_INTERVAL = 1000;
 
@@ -23,7 +23,6 @@ define(['blockmanager', 'underscore', 'codelog'], function(BlockManager, _, Code
     this.socketID = null;
     this.ConnectToServer(serverURL);
     this.blockManager = new BlockManager(this);
-    this.codeLog = new CodeLog(this);
     this.jobs = {};
     this.activeOnJob = false;
   }
@@ -105,19 +104,21 @@ define(['blockmanager', 'underscore', 'codelog'], function(BlockManager, _, Code
           break;
         case 'added_to_job':
           this.Emit('added_to_job', message);
-          console.log(message);
           this.HandleAddedToJob(message);
-	  this.ReportMessage(this.socketID + " added to job @ " + String(new Date()));
+          this.ReportMessage(this.socketID + " added to job @ " + String(new Date()));
           this.Ping();
           break;
         case 'ping':
           this.Emit('ping', message);
           this.HandlePing(message);
           break;
-	case 'report_message':
-	  console.log(message);
-	  this.HandleMessage(message);
-	  break;
+        case 'report_message':
+          console.log(message);
+          this.HandleMessage(message);
+          break;
+        case 'new_task':
+          this.Emit('new_task', message);
+        break;
       }
     },
 

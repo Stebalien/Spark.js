@@ -4,11 +4,6 @@ var _ = require("underscore");
 function Scheduler() {
   this.rdds = [];
   this.partitions = [];
-  this.server = {
-    blockManager: {
-      blocks: {} // TODO
-    }
-  };
 }
 
 Scheduler.prototype = {
@@ -124,15 +119,4 @@ function Cut() {
   this.sinks = [];
 }
 
-(function test() {
-  var schedule = require("./example-submission.json");
-  var scheduler = new Scheduler();
-  scheduler.AppendRDDs(schedule.rdds);
-  var cuts = scheduler.CutFor(schedule.targets);
-  _.each(cuts, function(cut) {
-    console.log({
-      sources: _.pluck(cut.sources, "id"),
-      sinks: _.map(cut.sinks, function(s) { return _.pick(s, "id", "refcount"); })
-    });
-  });
-})()
+module.exports = Scheduler;
