@@ -46,9 +46,14 @@ JobCodeLog.prototype = {
   },
 
   ProcessResultEntry: function(entry) {
-    var previousSeq = this.SeqOfPreviousResult(entry.seq); 
+    var nextSeq;
+    if (entry.id === 0) {
+      nextSeq = 0;
+    } else {
+      nextSeq = this.results[entry.id-1]+1;
+    }
     var code = '';
-    for (var seq = previousSeq + 1; seq < entry.seq; seq++) {
+    for (var seq = nextSeq; seq < entry.seq; seq++) {
       code += this.entries[seq].value;
     }
     return code;
