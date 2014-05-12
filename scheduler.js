@@ -1,6 +1,18 @@
 var Heap = require("heap");
 var _ = require("underscore");
 
+//http://stackoverflow.com/a/3955096
+Array.prototype.remove = function() {
+    var what, a = arguments, L = a.length, ax;
+    while (L && this.length) {
+        what = a[--L];
+        while ((ax = this.indexOf(what)) !== -1) {
+            this.splice(ax, 1);
+        }
+    }
+    return this;
+};
+
 function Scheduler(server, job) {
   this.rdds = [];
   this.partitions = [];
@@ -93,7 +105,6 @@ Scheduler.prototype = {
         var partition = {
           id: partitionDesc.id,
           level: level,
-          isSink: false,
           refcount: 0,
           reduced: partitionDesc.reduced,
           children: _.values(_.pick(that.partitions, partitionDesc.dependencies)),
@@ -117,8 +128,7 @@ Scheduler.prototype = {
     _.each(targets, function(id) {
       var sink = that.partitions[id];
       sink.refcount++;
-      if (!sink.isSink) {
-        sink.isSink = true;
+      if (sink.refcount === 1) {
         sinks.push(sink);
       } // else: Someone elses problem.
     });
@@ -129,13 +139,12 @@ Scheduler.prototype = {
       var sink = sinks.pop();
       if (assignments[sink.id]) continue; // assigned
       if (sink.reduced) {
-        var assigned = assignments[sink.children[0].sink.id]; // There must be only 1.
+        var assigned = assignments[sink.children[0].id]; // There must be only 1.
         if (assigned) {
           assigned.sinks.push(sink);
           continue;
         }
       }
-      sink.isSink = true;
       var cut = {
         sinks: [sink],
         sources: [],
@@ -145,8 +154,9 @@ Scheduler.prototype = {
       var node = sink;
       while (node.children.length > 0) {
         _.each(_.rest(node.children), function(s) {
-          if (!s.isSink) {
-            s.isSink = true;
+          s.refcount++;
+          if (s.refcount === 1) {
+            // Doesn't already exist
             var assigned = assignments[s.id];
             if (!assigned) {
               sinks.push(s);
@@ -154,21 +164,19 @@ Scheduler.prototype = {
               assigned.sinks.push(s);
             }
           }
-          s.refcount++;
           cut.sources.push(s);
         });
         node = node.children[0]; // Guarenteed by loop condition.
 
-        if (node.isSink) {
+        if (node.refcount > 0) {
           node.refcount++;
           cut.sources.push(node);
           break;
         } else {
           var assigned = assignments[node.id];
           if (assigned) {
-            node.isSink = true;
-            assigned.sinks.push(node);
             node.refcount++;
+            assigned.sinks.push(node);
             cut.sources.push(node);
             break;
           } else {
@@ -178,7 +186,6 @@ Scheduler.prototype = {
               if (assigned) {
                 assigned.sinks.push(node);
                 cut.sources.push(node);
-                node.isSink = true;
                 node.refcount++;
                 break;
               }
@@ -235,10 +242,29 @@ Scheduler.prototype = {
         return v.size;
       });
       minSourceCut.size += smallCut.size;
-      // Dumb but should work.
-      minSourceCut.sources = _.union(minSourceCut.sources, smallCut.sources);
-      minSourceCut.sinks = _.union(minSourceCut.sinks, smallCut.sinks);
-      minSourceCut.sources = _.difference(minSourceCut.sources, minSourceCut.sinks);
+      // merge sources.
+      _.each(smallCut.sources, function(s) {
+        if (_.contains(minSourceCut.sources, s)) {
+          s.refcount--;
+        } else {
+          minSourceCut.sources.push(s);
+        }
+      });
+      // Merge sinks.
+      Array.prototype.push.apply(minSourceCut.sinks, smallCut.sinks); // Overlap impossible.
+      // Get rid of sourc-sink pairs.
+      minSourceCut.sources = _.filter(minSourceCut.sources, function(s) {
+        // It's my sink!
+        if (_.contains(minSourceCut.sinks, s)) {
+          s.refcount--;
+          if (s.refcount === 0) {
+            minSourceCut.sinks.remove(s);
+          }
+          return false;
+        } else {
+          return true;
+        }
+      });
       heap.updateItem(minSourceCut);
     }
     cuts = leftovers.concat(heap.toArray());
