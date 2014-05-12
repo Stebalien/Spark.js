@@ -108,6 +108,10 @@ var server = {
     return false;
   },
 
+  GetPeerFromSocketID: function(socketID) {
+    return socketID && this.socketIDToPeer[socketID];
+  },
+
   GetPeerFromSocket: function(socket) {
     return socket && this.socketIDToPeer[socket.id];
   },
@@ -185,6 +189,8 @@ var server = {
 
     this.app.io.route('master', function(req, res) {
       var job = this.CreateJob();
+      req.io.join(job.id);
+      this.ConnectPeerWithSocket(job.GetMaster(), req.socket);
       req.io.respond({masterID: job.id, peerJobID: job.peerJobID});
     }.bind(this));
 
@@ -228,7 +234,7 @@ var server = {
       var sockets = req.data.sockets;
       var description = req.data.description;
 
-      var peer = this.GetPeerFromSocket(sockets.answererSocketID);
+      var peer = this.GetPeerFromSocketID(sockets.answererSocketID);
       this.SendToPeer(peer, 'offer', req.data);
     }.bind(this));
 
@@ -236,7 +242,7 @@ var server = {
       var sockets = req.data.sockets;
       var description = req.data.description;
 
-      var peer = this.GetPeerFromSocket(sockets.offererSocketID);
+      var peer = this.GetPeerFromSocketID(sockets.offererSocketID);
       this.SendToPeer(peer, 'answer', req.data);
     }.bind(this));
 
@@ -244,7 +250,7 @@ var server = {
       var sockets = req.data.sockets;
       var candidate = req.data.candidate;
 
-      var peer = this.GetPeerFromSocket(sockets.answererSocketID);
+      var peer = this.GetPeerFromSocketID(sockets.answererSocketID);
       this.SendToPeer(peer, 'icecandidate', req.data);
     }.bind(this));
 

@@ -107,7 +107,9 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     },
 
     CreateJob: function() {
-      var data = {masterID: window.location.hash};
+      var hash = window.location.hash;
+      var masterID = hash && hash.substr(1);
+      var data = {masterID: masterID};
       this.isMaster && this.socket.emit('master', data, function(ids) {
         this.masterID = ids.masterID;
         this.peerJobID = ids.peerJobID;
@@ -132,6 +134,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
           this.ConnectToPeer(message.socketID);
           //this.SendOffer(message);
           this.Emit('new_peer', message.socketID);
+          console.log("NEW");
           break;
         case 'added_to_job':
           this.Emit('added_to_job', message);
