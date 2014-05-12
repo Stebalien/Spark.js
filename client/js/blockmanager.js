@@ -28,7 +28,7 @@ define([], function() {
   BlockManager.prototype.Get = function(id, callback) {
     // Cached locally
     if (id in this.localBlocks) {
-      return this.localBlocks[id];
+      callback(this.localBlocks[id]);
     }
 
     if (!(id in this.pendingGets)) {

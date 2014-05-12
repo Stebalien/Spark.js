@@ -134,21 +134,15 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
           this.ConnectToPeer(message.socketID);
           //this.SendOffer(message);
           this.Emit('new_peer', message.socketID);
-          console.log("NEW");
           break;
         case 'added_to_job':
           this.Emit('added_to_job', message);
           this.HandleAddedToJob(message);
-          this.ReportMessage(this.socketID + " added to job @ " + String(new Date()));
           this.Ping();
           break;
         case 'ping':
           this.Emit('ping', message);
           this.HandlePing(message);
-          break;
-        case 'report_message':
-          console.log(message);
-          this.HandleMessage(message);
           break;
         case 'new_task':
           this.Emit('new_task', message);
@@ -381,15 +375,16 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
               seqID: message.seqID,
               originalSender: message.senderSocketID,
               type: 'put',
-              value: value
+              value: value,
+              id: message.id
             });
           }.bind(this));
           break;
         case 'put':
-          this.blockManager.put(message.id, message.value, message.replication);
+          this.blockManager.Put(message.id, message.value, message.replication);
           break;
         case 'delete':
-          this.blockManager.delete(message.id);
+          this.blockManager.Delete(message.id);
           break;
         case 'getnow':
           this.blockManager.GetNow(message.id, function(value) {
@@ -397,27 +392,11 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
               seqID: message.seqID,
               originalSender: message.senderSocketID,
               type: 'put',
-              value: value
+              value: value,
+              id: message.id
             });
           }.bind(this));
           break;
-      }
-    },
-
-    ReportMessage: function(err){
-      console.log("report message", this.jobID);
-      var data = {
-        jobID: this.jobID,
-        error: err
-      };
-      this.Call('report_message', data) 
-      this.Emit('report_message', data)
-    }, 
-
-    HandleMessage: function(data) {
-      if (this.IsMaster()){
-        var error = data.error;
-        $("#error_log").append("<br>" + error);
       }
     }
   };
@@ -563,16 +542,16 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       }
       if (!isResponse) {
         message.originalSender = this.localSocketID;
+      } else {
+        message.seqID = this.seqID;
+        this.seqID++;
       }
-      message.seqID = this.seqID;
       if (this.channelOpened) {
         this.channel.send(JSON.stringify(message));
       }
-      this.seqID++;
     },
 
     HandleIncomingMessage: function(event) {
-      //console.log(event.data);
       var message = JSON.parse(event.data);
       var seqID = message.seqID;
 

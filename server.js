@@ -273,13 +273,6 @@ var server = {
       this.SendToPeer(peer, 'icecandidate', req.data);
     }.bind(this));
 
-    this.ioroute('report_message', function(req){
-      //var jobID = req.data.jobID;
-
-      //var master = this.GetMaster(jobID).socket;
-      //this.SendToPeer(master, req.sessionID, 'report_message', req.data);
-    }.bind(this));
-
     this.ioroute('disconnect', function(req) {
       var peer = this.GetPeer(req.sessionID);
 
