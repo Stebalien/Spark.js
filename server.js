@@ -34,7 +34,7 @@ var server = {
   CreatePeer: function(job, socket) {
     var peer = job.AddPeer();
     this.ConnectPeerWithSocket(peer, socket);
-    this.Emit('join', peer);
+    job.Emit('join', peer);
     return peer;
   },
 
@@ -243,7 +243,7 @@ var server = {
 
     this.ioroute('leave_job', function(req) {
       req.job.RemovePeer(req.peer);
-      this.Emit('leave', req.peer);
+      req.job.Emit('leave', req.peer);
     }.bind(this));
 
     this.ioroute('ping', function(req) {
@@ -285,7 +285,7 @@ var server = {
 
       for (var jobID in this.jobs) {
         this.jobs[jobID].RemovePeer(peer);
-        this.Emit('leave', peer);
+        req.job.Emit('leave', peer);
       }
 
       delete this.peers[req.sessionID];
