@@ -13,6 +13,14 @@ function Scheduler(server, job) {
   this.toSchedule = [];
   this.job.On('join', function(peer) {
     this.OnAddPeer(peer);
+  }.bind(this));
+  this.job.On('leave', function(peer) {
+    this.OnRemovePeer(peer);
+  }.bind(this));
+}
+
+Scheduler.prototype = {
+  OnAddPeer: function(peer) {
     var pending = this.pendingTasks;
     this.pendingTasks = [];
     _.each(pending, function(task) {
@@ -23,19 +31,7 @@ function Scheduler(server, job) {
       this.toSchedule = [];
       this.DriveTasks(toSchedule);
     }
-    // TODO: Steal work.
-  }.bind(this));
-  this.job.On('leave', function(peer) {
-    this.OnRemovePeer(peer);
-  }.bind(this));
-}
-
-Scheduler.prototype = {
-  OnAddPeer: function(peer) {
-    this.peersToTasks[peer.id] = {
-      tasks: [],
-      load: 0
-    };
+    // TODO: Steal work?
   },
 
   UpdateCodeVersion: function(id) {
@@ -44,10 +40,16 @@ Scheduler.prototype = {
     }
   },
 
+  GetPeerData: function(peer) {
+    return this.peersToTasks[peer.id] || (this.peersToTasks[peer.id] = { tasks: [], load: 0 });
+  },
   OnRemovePeer: function(peer) {
-    var tasks = this.peersToTasks[peer.id];
+    var data = this.GetPeerData(peer);
+    if (!data) {
+      return;
+    }
     delete this.peersToTasks[peer.id];
-    _.each(tasks, function(task) {
+    _.each(data.tasks, function(task) {
       _.each(task.sinks, function(sink) {
         delete this.dataToPeers[sink.id];
       }, this);
@@ -63,7 +65,7 @@ Scheduler.prototype = {
       return;
     }
     peer.load += task.size;
-    this.peersToTasks[peer.id].tasks.push(task);
+    this.GetPeerData(peer).tasks.push(task);
     var todo = {};
     _.each(task.sinks, function(s) {
       this.dataToPeers[s.id] = peer;
