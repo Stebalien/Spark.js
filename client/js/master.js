@@ -45,6 +45,12 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
         $(".loading").remove();
         $(".loaded").css("visibility", "visible");
         var worker = new SparkWorker(peer, true);
+        _.each(_.sortBy(logItems, "seq"), function(item) {
+          console.log(item);
+          if (item.type === "code") {
+              worker.call("exec", util.toURL(item.value));
+          }
+        });
         worker.register({
           "console/promiseResult": function(id, type) {
             c.promiseResult(id, type);
