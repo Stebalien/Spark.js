@@ -158,7 +158,7 @@ define([
   };
 
   Console.prototype.promiseResult = function(id, type) {
-    if (this._display.find("#result-"+id).empty()) {
+    if (!this._display.find("#result-"+id).get(0)) {
       this._promiseResult(id, type);
       this.emit('append', {
         type: 'result',
