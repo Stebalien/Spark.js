@@ -324,18 +324,18 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
             }
           });
         }
-      } else if (this.connection[socketID].ChannelOpened()) {
+      } else if (this.connections[socketID].ChannelOpened()) {
         callback();
       }
     },
 
     SendMessageToPeer: function(socketID, message, callback) {
-      if (!this.connection[socketID] || !this.connection[socketID].ChannelOpened()) {
+      if (!this.connections[socketID] || !this.connections[socketID].ChannelOpened()) {
         this.ConnectToPeer(socketID, callback);
         return;
       } 
 
-      this.connection[socketID].SendMessage(message, callback);
+      this.connections[socketID].SendMessage(message, callback);
     },
 
     HandleMessageFromPeer: function(remoteSocketID, message) {
