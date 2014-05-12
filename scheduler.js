@@ -42,7 +42,7 @@ Scheduler.prototype = {
       this.latestId = id;
     }
   },
-  OnRemovePeer: function(task) {
+  OnRemovePeer: function(peer) {
     var tasks = this.peersToTasks[peer.id];
     delete this.peersToTasks[peer.id];
     _.each(function(task) {
