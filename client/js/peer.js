@@ -16,7 +16,15 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
 
   var serverURL = location.origin;
 
-  function Peer() {
+  function CreatePeer() {
+    return new Peer(false);
+  }
+
+  function CreateMaster() {
+    return new Peer(true);
+  }
+
+  function Peer(isMaster) {
     this.socket = null;
     this.connections = {};
     this.eventHandlers = {};
@@ -25,11 +33,18 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     this.blockManager = new BlockManager(this);
     this.jobs = {};
     this.activeOnJob = false;
+    this.isMaster = isMaster;
+    this.masterID = null;
+    this.peerJobID = null;
   }
 
   Peer.prototype = {
     Call: function(method, data, callback) {
-      data.jobID = this.jobID;
+      if (!data) {
+        data = {};
+      }
+      data.masterID = this.masterID;
+      data.peerJobID = this.peerJobID;
       this.socket.emit(method, data, callback);
     },
 
@@ -70,7 +85,12 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         ack();
       }
 
-      this.Volunteer();
+      if (this.isMaster) {
+        this.CreateJob();
+      } else {
+        this.Volunteer();
+      }
+
       if (this.init) {
         return;
       }
@@ -84,6 +104,17 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       }
 
       this.socket.on('message', this.OnMessage.bind(this));
+    },
+
+    CreateJob: function() {
+      var data = {masterID: window.location.hash};
+      this.isMaster && this.socket.emit('master', data, function(ids) {
+        this.masterID = ids.masterID;
+        this.peerJobID = ids.peerJobID;
+        window.location.hash = 'master:'+this.masterID;
+        this.Emit('master_ready');
+        this.Ping();
+      }.bind(this));
     },
 
     OnMessage: function(message) {
@@ -130,12 +161,12 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       this.activeOnJob = true;
     },
 
-    GetPeerID: function() {
+    GetPeerJobID: function() {
       return this.peerJobID;
     },
 
     IsMaster: function() {
-      return this.jobID && this.peerJobID;
+      return this.isMaster;
     },
 
     HandlePing: function(message) {
@@ -161,7 +192,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
 
     Ping: function() {
       this.PingTimeout = setTimeout(this.Ping.bind(this), PING_INTERVAL);
-      this.socket.emit('ping');
+      this.Call('ping');
     },
 
     On: function(type, handler, once) {
@@ -233,10 +264,13 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         return;
       }
 
+      var data = {peerJobID: window.location.hash.substr(1)};
       if (!this.socket.socket.connected) {
         this.ConnectToServer(serverURL);
       }
-      this.socket.emit('volunteer');
+      this.socket.emit('volunteer', data, function(peerJobID) {
+        this.peerJobID = peerJobID;
+      }.bind(this));
       this.Emit('volunteer');
     },
 
@@ -247,7 +281,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
           sockets: sockets,
           description: description
         };
-        this.socket.emit('offer', data);
+        this.Call('offer', data);
         this.Emit('send_offer', data);
       }.bind(this));
     },
@@ -269,7 +303,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         sockets: sockets,
         description: description
       };
-      this.socket.emit('answer', data);
+      this.Call('answer', data);
       this.Emit('send_answer', data);
     },
 
@@ -285,7 +319,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         sockets: sockets,
         candidate: candidate
       };
-      this.socket.emit('icecandidate', data);
+      this.Call('icecandidate', data);
       this.Emit('send_icecandidate', data);
     },
 
@@ -307,7 +341,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     },
 
     DisconnectFromJob: function() {
-      this.socket.emit('leave_job', {jobID: this.jobID});
+      this.Call('leave_job', {jobID: this.jobID});
       this.activeOnJob = false;
     },
 
@@ -375,7 +409,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         jobID: this.jobID,
         error: err
       };
-      this.socket.emit('report_message', data) 
+      this.Call('report_message', data) 
       this.Emit('report_message', data)
     }, 
 
@@ -552,5 +586,8 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     }
   };
 
-  return Peer;
+  return {
+    CreatePeer: CreatePeer,
+    CreateMaster: CreateMaster
+  };
 });

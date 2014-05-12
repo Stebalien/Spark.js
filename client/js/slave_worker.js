@@ -1,6 +1,6 @@
-importScripts("lib/require.js");
-importScripts("lib/underscore.js");
-importScripts("require.config-worker.js");
+importScripts("/js/lib/require.js");
+importScripts("/js/lib/underscore.js");
+importScripts("/js/require.config-worker.js");
 
 self.isMaster = false;
 

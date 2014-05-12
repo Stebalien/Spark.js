@@ -18,25 +18,117 @@ var server = {
   consoleLog: null,
   codeLog: null,
   schedulers: {},
+  jobsByMasterID: {},
+  jobsByPeerID: {},
+  socketIDToPeer: {},
 
-  AddNewPeer: function(sessionID, jobID, socket, isMaster) {
-    var peer = new Peer(sessionID, jobID, socket, isMaster);
-    this.peers[sessionID] = peer;
-    this.sockets[socket.id] = socket;
-    if (jobID in this.jobs) {
-      if (isMaster) {
-        this.jobs[jobID].AddMaster(peer);
-      } else {
-        this.jobs[jobID].AddPeer(peer);
-      }
-    }
+  //AddNewPeer: function(sessionID, jobID, socket, isMaster) {
+    //var peer = new Peer(sessionID, jobID, socket, isMaster);
+    //this.peers[sessionID] = peer;
+    //this.sockets[socket.id] = socket;
+    //if (jobID in this.jobs) {
+      //if (isMaster) {
+        //this.jobs[jobID].AddMaster(peer);
+      //} else {
+        //this.jobs[jobID].AddPeer(peer);
+      //}
+    //}
+    //return peer;
+  //},
+
+  CreateJob: function() {
+    var job = new Job(this);
+    this.jobsByMasterID[job.id] = job;
+    this.jobsByPeerID[job.peerJobID] = job;
+    this.blockManager.CreateJob(job.id);
+    return job;
+  },
+
+  CreatePeer: function(job, socket) {
+    var peer = job.AddPeer();
+    this.ConnectPeerWithSocket(peer, socket);
     return peer;
+  },
+
+  ConnectPeerWithSocket: function(peer, socket) {
+    peer.socket = socket;
+    this.socketIDToPeer[socket.id] = peer;
+  },
+
+  GetPeerFromSocketID: function(socketID) {
+    return this.socketIDToPeer[socketID];
+  },
+
+  GetJobByMasterID: function(masterID) {
+    return this.jobsByMasterID[masterID];
+  },
+
+  GetJobByPeerID: function(peerJobID) {
+    return this.jobsByPeerID[peerJobID];
+  },
+
+  ioroute: function(name, callback) {
+    this.app.io.route(name, function(req) {
+      if (!this.Preprocess(req)) {
+        req.io.respond('error');
+      }
+      callback(req);
+    }.bind(this));
+  },
+
+  iomasterroute: function(name, routes) {
+    var newRoutes = {};
+    for (var route in routes) {
+      newRoutes[route] = function(req) {
+        if (this.Preprocess(req) && req.peer && req.peer.IsMaster()) {
+          routes[route](req);
+        }
+      }.bind(this);
+    }
+
+    this.app.io.route(name, newRoutes);
+  },
+
+  Preprocess: function(req) {
+    if (!req.data) {
+      return false;
+    }
+
+    // Only the master knows this ID
+    var masterID = req.data.masterID;
+    if (masterID) {
+      var job = this.GetJobByMasterID(masterID);
+      if (!job) {
+        return false;
+      }
+      req.job = job;
+      req.peer = job.GetMaster();
+      req.peer.socket = req.socket;
+      return true;
+    }
+
+    var peerJobID = req.data.peerJobID;
+    if (peerJobID) {
+      var job = this.GetJobByPeerID(peerJobID);
+      if (!job) {
+        return false;
+      }
+      req.job = job;
+      req.peer = this.GetPeerFromSocket(req.socket);
+      return true;
+    }
+
+    return false;
+  },
+
+  GetPeerFromSocket: function(socket) {
+    return socket && this.socketIDToPeer[socket.id];
   },
 
   AddJob: function() {
     var job = new Job(this);
     this.jobs[job.id] = job;
-    this.peerJobs[job.peerID] = job;
+    this.peerJobs[job.peerJobID] = job;
     return job;
   },
 
@@ -97,106 +189,82 @@ var server = {
     // Client should access this route to submit a new RDD
     this.app.get('/', function(req, res) {
       req.session.start = new Date().toString();
-      var job = this.AddJob();
-      req.session.jobID = job.id;
-      // TODO: display peer id somewhere
-      this.blockManager.CreateJob(job.id);
-      res.redirect('/master/' + job.id);
+      res.sendfile(__dirname + '/client/master.html');
     }.bind(this));
 
-    this.app.get(/^\/master\/([a-z0-9]+)$/, function(req, res) {
-      var jobID = req.params[0];
-      if (!this.JobExists(jobID)) {
-        // TODO: an error might be better here; seems kind of weird to redirect
-        // to / and then back to /master/{id}
-        res.redirect('/');
-        return;
-      }
-      req.session.jobID = jobID;
-      req.session.isMaster = true;
+    this.app.io.route('master', function(req, res) {
+      var job = this.CreateJob();
+      req.io.respond({masterID: job.id, peerJobID: job.peerJobID});
+    }.bind(this));
+
+    this.app.get(/^\/master#([a-z0-9]+)$/, function(req, res) {
       res.sendfile(__dirname + '/client/master.html');
     }.bind(this));
 
     // Peers access this route (any path with a '/' followed by letters/numbers)
-    this.app.get(/^\/peer\/([a-z0-9]+)$/, function(req, res) {
-      var peerJobID = req.params[0];
-      if (!this.JobExistsForPeer(peerJobID)) {
-        res.sendfile(__dirname + '/client/error.html');
-        return;
-      }
-
-      req.session.isMaster = false;
-      req.session.peerJobID = peerJobID;
-
+    this.app.get(/^\/peer\/$/, function(req, res) {
       res.sendfile(__dirname + '/client/peer.html');
     }.bind(this));
 
     this.app.io.route('volunteer', function(req) {
-      var job;
-      var data = {};
-      if (req.session.jobID) {
-        job = this.jobs[req.session.jobID];
-        data.peerJobID = job.peerID;
-      } else if (req.session.peerJobID) {
-        job = this.peerJobs[req.session.peerJobID];
+      var peerJobID = req.data.peerJobID;
+      var job = this.GetJobByPeerID(peerJobID);
+      if (!job) {
+        return;
       }
 
-      data.jobID = job.id;
+      var peer = this.CreatePeer(job, req.socket);
 
-      var socketID = req.socket.id;
-      this.AddNewPeer(req.sessionID, job.id, req.socket, req.session.isMaster);
+      data.jobID = job.id;
       req.io.join(job.id);
-      this.Broadcast(req.io.room(job.id), 'new_peer', {socketID: socketID});
-      this.SendToPeer(req.socket, req.sessionID, 'added_to_job', data);
+      this.Broadcast(req.io.room(job.id), 'new_peer', {socketID: req.socket.id});
+      this.SendToPeer(peer, 'added_to_job', data);
     }.bind(this));
 
-    this.app.io.route('leave_job', function(req) {
+    this.ioroute('leave_job', function(req) {
       var jobID = req.data.jobID;
       req.io.leave(jobID);
       this.jobs[jobID].RemovePeer(this.GetPeer(req.sessionID));
     }.bind(this));
 
-    this.app.io.route('ping', function(req) {
-      server.HandlePing(req.sessionID);
-      var peer = this.GetPeer(req.sessionID);
-      if (!peer) {
-        peer = this.AddNewPeer(req.sessionID, req.session.jobID, req.socket);
-      }
-      this.SendToPeer(req.socket, req.sessionID, 'ping', this.CreatePingData(peer));
+    this.ioroute('ping', function(req) {
+      //server.HandlePing(req.sessionID);
+      var peer = req.peer;
+      this.SendToPeer(peer, 'ping', this.CreatePingData(peer));
     }.bind(this));
 
-    this.app.io.route('offer', function(req) {
+    this.ioroute('offer', function(req) {
       var sockets = req.data.sockets;
       var description = req.data.description;
 
-      var socket = this.GetSocket(sockets.answererSocketID);
-      this.SendToPeer(socket, req.sessionID, 'offer', req.data);
+      var peer = this.GetPeerFromSocket(sockets.answererSocketID);
+      this.SendToPeer(peer, 'offer', req.data);
     }.bind(this));
 
-    this.app.io.route('answer', function(req) {
+    this.ioroute('answer', function(req) {
       var sockets = req.data.sockets;
       var description = req.data.description;
 
-      var socket = this.GetSocket(sockets.offererSocketID);
-      this.SendToPeer(socket, req.sessionID, 'answer', req.data);
+      var peer = this.GetPeerFromSocket(sockets.offererSocketID);
+      this.SendToPeer(peer, 'answer', req.data);
     }.bind(this));
 
-    this.app.io.route('icecandidate', function(req) {
+    this.ioroute('icecandidate', function(req) {
       var sockets = req.data.sockets;
       var candidate = req.data.candidate;
 
-      var socket = this.GetSocket(sockets.answererSocketID);
-      this.SendToPeer(socket, req.sessionID, 'icecandidate', req.data);
+      var peer = this.GetPeerFromSocket(sockets.answererSocketID);
+      this.SendToPeer(peer, 'icecandidate', req.data);
     }.bind(this));
 
-    this.app.io.route('report_message', function(req){
+    this.ioroute('report_message', function(req){
       var jobID = req.data.jobID;
 
       var master = this.GetMaster(jobID).socket;
       this.SendToPeer(master, req.sessionID, 'report_message', req.data);
     }.bind(this));
 
-    this.app.io.route('disconnect', function(req) {
+    this.ioroute('disconnect', function(req) {
       var peer = this.GetPeer(req.sessionID);
 
       if (!peer) {
@@ -211,55 +279,37 @@ var server = {
       delete this.sockets[peer.socketID];
     }.bind(this));
 
-    var checkMaster = function checkMaster(req) {
-      var peer = this.GetPeer(req.sessionID);
-      return peer && peer.IsMaster();
-    }.bind(this);
-
-    this.app.io.route('consolelog', {
+    this.iomasterroute('consolelog', {
       'record': function(req) {
-        console.log('record.');
-        //if (checkMaster(req)) {
-          var jobID = req.data.jobID || req.session.jobID;
-          this.consoleLog.Record(jobID, req.data.entry);
-          this.AddToCodeLog(jobID, req.data.entry);
-          console.log('code');
-        //}
+        var jobID = req.job.id;
+        this.consoleLog.Record(jobID, req.data.entry);
+        this.AddToCodeLog(jobID, req.data.entry);
       }.bind(this),
 
       'replay': function(req) {
-        if (checkMaster(req)) {
-          var jobID = req.data.jobID || req.session.jobID;
-          req.io.respond(this.consoleLog.Replay(jobID));
-        }
+        req.io.respond(this.consoleLog.Replay(req.job.id));
       }.bind(this)
     });
 
-    this.app.io.route('blockmanager', {
+    this.ioroute('blockmanager', {
       'get': function(req) {
         var id = req.data.id;
-        var jobID = req.data.jobID || req.session.jobID;
-        this.blockManager.Get(jobID, id, function(socketIDs) {
+        this.blockManager.Get(req.job.id, id, function(socketIDs) {
           req.io.respond(socketIDs);
         });
       }.bind(this),
 
       'put': function(req) {
         var id = req.data.id;
-        var jobID = req.data.jobID || req.session.jobID;
-        var socketID = req.socket.id;
-        this.blockManager.Put(jobID, id, socketID);
+        this.blockManager.Put(req.job.id, id, req.peer.socket.id);
       }.bind(this)
     });
 
-    this.app.io.route('codelog', {
+    this.ioroute('codelog', {
       'get': function(req) {
-        console.log('get now');
-        var jobID = req.data.jobID;
-        var minId = req.data.minId;
-        var maxId = req.data.maxId;
-        this.GetFromCodeLog(jobID, minId, maxId, function(entries) {
-          console.log('here');
+        var minSeq = req.data.minSeq;
+        var maxSeq = req.data.maxSeq;
+        this.GetFromCodeLog(req.job.id, minSeq, maxSeq, function(entries) {
           req.io.respond(entries);
         }.bind(this));
       }.bind(this)
@@ -284,6 +334,7 @@ var server = {
       //}
     }.bind(this));
   },
+
   GetScheduler: function(jobID) {
     return (this.schedulers[jobID] || (this.schedulers[jobID] = new Scheduler()));
   },
@@ -303,11 +354,10 @@ var server = {
     room.broadcast('message', message);
   },
 
-  SendToPeer: function(socket, sessionID, type, data) {
+  SendToPeer: function(peer, type, data) {
     var message = {
       from: 'server',
-      sessionID: sessionID,
-      socketID: socket.id,
+      socketID: peer.socket.id,
       type: type
     };
 
@@ -317,7 +367,7 @@ var server = {
       }
     }
 
-    socket.emit('message', message);
+    peer.socket.emit('message', message);
   },
 
   SendReliable: function(socket, data) {
@@ -383,11 +433,10 @@ var server = {
 };
 
 var peerID = 1;
-function Peer(sessionID, jobID, socket, isMaster) {
+function Peer(jobID, isMaster) {
   this.id = peerID++;
-  this.sessionID = sessionID;
   this.jobID = jobID;
-  this.socket = socket;
+  this.socket = null;
   this.isMaster = isMaster;
   this.UpdatePingTime();
 }
@@ -421,15 +470,17 @@ Peer.prototype = {
 function Job(server) {
   var seed = crypto.randomBytes(20);
   this.id = crypto.createHash('sha1').update(seed).digest('hex');
-  this.peerID = crypto.createHash('sha1').update(this.id).digest('hex');
+  this.peerJobID = crypto.createHash('sha1').update(this.id).digest('hex');
   this.volunteers = [];
-  this.master = null;
+  this.master = new Peer(this.id, true);
   this.codeLog = server.codeLog.CreateForJob(this.id);
 }
 
 Job.prototype = {
-  AddPeer: function(peer) {
+  AddPeer: function() {
+    var peer = new Peer(this.id, false);
     this.volunteers.push(peer);
+    return peer;
   },
 
   AddMaster: function(master) {

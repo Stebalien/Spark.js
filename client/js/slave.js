@@ -28,7 +28,7 @@ require.config({
 require(["underscore", "jquery", "console", "codemanager", "spark_worker", "util", "peer", "dashboard"],
 function(_,             $      ,  Console,  CodeManager, SparkWorker ,   util,   Peer, Dashboard) {
   // TODO: Multiple workers.
-  var peer = new Peer();
+  var peer = Peer.CreatePeer();
   var dashboard = new Dashboard(peer);
   $(document).ready(function() {
     dashboard.Init();

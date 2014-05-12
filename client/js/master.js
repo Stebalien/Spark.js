@@ -28,13 +28,13 @@ require.config({
 require(["underscore", "jquery", "console", "spark_worker", "util", "mastertaskmanager", "peer", "master_dashboard"],
 function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskManager, Peer, MasterDashboard) {
 
-  var peer = new Peer();
+  var peer = Peer.CreateMaster();
   var taskManager = new MasterTaskManager(peer);
-  peer.On('connected', function() {
+  peer.On('master_ready', function() {
     peer.Call('consolelog:replay', {}, function(logItems) {
       $(document).ready(function() {
         // Add peer url.
-        var peerURL = location.origin + '/peer/' + peer.GetPeerID();
+        var peerURL = location.origin + '/peer/#' + peer.GetPeerJobID();
         $("#peerUrl").replaceWith($("<a>", {text: peerURL, href: peerURL}));
 
         var dashboard = new MasterDashboard(peer);
