@@ -6,9 +6,10 @@ self.isMaster = false;
 
 require(["worker/goalmanager", "underscore", "worker/rpc", "worker/port", "rdd"], function(GoalManager, _, rpc, port, RDD) {
   self.RDD = RDD;
-  rpc.register("exec", function(script) {
+  rpc.register("exec", function(script, cb) {
     // Can't throw an exception.
     importScripts(script);
+    cb();
   });
   rpc.register("schedule", function(task) {
     GoalManager.submitTask(task);

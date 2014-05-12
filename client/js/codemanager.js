@@ -33,10 +33,17 @@ define(['underscore', "util"], function(_, util) {
       waiting.push(callback)
     },
     _advance: function() {
-      var update;
-      while (update = this.code[this.nextToApply]) {
-        this.worker.call("exec", util.toURL(update));
-        _.each(this.waiting[this.nextToApply++], function(cb) { cb(); });
+      var that = this;
+      function applyUpdate(n) {
+        var update = that.code[n];
+        that.worker.call("exec", util.toURL(update), function() {
+          _.each(that.waiting[n], function(cb) { cb(); });
+          that.waiting[n] = null;
+        });
+      }
+      while (this.code[this.nextToApply]) {
+        applyUpdate(this.nextToApply);
+        this.nextToApply++;
       }
     }
   };
