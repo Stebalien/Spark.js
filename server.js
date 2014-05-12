@@ -188,7 +188,16 @@ var server = {
     }.bind(this));
 
     this.app.io.route('master', function(req, res) {
-      var job = this.CreateJob();
+      var masterJobID = req.data.masterJobID;
+      var job = this.GetJobByMasterID(masterJobID);
+ 
+      // Master is reconnecting
+      if (job) {
+        job.ReplaceMaster(); 
+      } else {
+        job = this.CreateJob();
+      }
+
       req.io.join(job.id);
       this.ConnectPeerWithSocket(job.GetMaster(), req.socket);
       req.io.respond({masterID: job.id, peerJobID: job.peerJobID});
@@ -451,8 +460,8 @@ function Job(server) {
   var seed = crypto.randomBytes(20);
   this.id = crypto.createHash('sha1').update(seed).digest('hex');
   this.peerJobID = crypto.createHash('sha1').update(this.id).digest('hex');
-  this.volunteers = [];
   this.master = new Peer(this.id, true);
+  this.volunteers = [this.master];
   this.codeLog = server.codeLog.CreateForJob(this.id);
 }
 
@@ -461,6 +470,11 @@ Job.prototype = {
     var peer = new Peer(this.id, false);
     this.volunteers.push(peer);
     return peer;
+  },
+
+  ReplaceMaster: function() {
+    this.master = new Peer(this.id, true);
+    this.volunteers[0] = this.master;
   },
 
   AddMaster: function(master) {
