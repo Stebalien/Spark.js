@@ -320,22 +320,21 @@ var server = {
       }.bind(this)
     });
 
-    this.app.io.route('submit_task', function(req) {
+    this.ioroute('submit_task', function(req) {
       console.log('a');
       //if (checkMaster(req)) {
         console.log('b');
-        var jobID = req.data.jobID || req.session.jobID;
-        var scheduler = this.GetScheduler(jobID);
+        var scheduler = this.GetScheduler(req.job.id);
         scheduler.AppendRDDs(req.data.rdds);
         var cuts = scheduler.CutFor(req.data.targets);
-        var peer = this.PeersForJob(jobID)[0];
+        var peer = req.job.GetPeers()[1];
         _.each(cuts, function(cut) {
-          peer.Send('new_task', {
+          this.SendToPeer(peer, 'new_task', {
             id: req.data.id,
             sources: _.pluck(cut.sources, "id"),
             sinks: _.pluck(cut.sinks, "id")
           });
-        });
+        }, this);
       //}
     }.bind(this));
   },
@@ -454,22 +453,6 @@ Peer.prototype = {
   IsMaster: function() {
     return this.isMaster;
   },
-  Send: function(type, data) {
-    var message = {
-      from: 'server',
-      sessionID: this.sessionID,
-      socketID: this.socket.id,
-      type: type
-    };
-
-    for (var key in data) {
-      if (!(key in message)) {
-        message[key] = data[key];
-      }
-    }
-
-    this.socket.emit('message', message);
-  }
 };
 
 function Job(server) {
