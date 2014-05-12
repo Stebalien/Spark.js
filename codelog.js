@@ -15,7 +15,7 @@ JobCodeLog.prototype = {
     }
 
     if (entry.type == 'code' || entry.type == 'result') {
-      this.entries[entry.seq] = entry;
+      this.entries[entry.seq] = _.clone(entry);
       this.ProcessLog();
       return;
     }
