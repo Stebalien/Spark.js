@@ -215,7 +215,7 @@ var server = {
 
       var peer = this.CreatePeer(job, req.socket);
 
-      data.jobID = job.id;
+      var data = {jobID: job.id};
       req.io.join(job.id);
       this.Broadcast(req.io.room(job.id), 'new_peer', {socketID: req.socket.id});
       this.SendToPeer(peer, 'added_to_job', data);
