@@ -12,12 +12,13 @@ function(_,             RPC,   Port) {
   }
   Worker.prototype.send = function() {
     var that = this;
+    var args = arguments;
     if (!this._ready) {
       this.ready(function() {
-        that._port.send.apply(that._port, arguments);
+        that._port.send.apply(that._port, args);
       });
     } else {
-      this._port.send.apply(that._port, arguments);
+      this._port.send.apply(that._port, args);
     }
   };
   Worker.prototype.on = function() {
@@ -27,7 +28,15 @@ function(_,             RPC,   Port) {
     this._port.off.apply(this._port, arguments);
   };
   Worker.prototype.call = function() {
-    this._rpc.call.apply(this._rpc, arguments);
+    var that = this;
+    var args = arguments;
+    if (!this._ready) {
+      this.ready(function() {
+        that._rpc.call.apply(that._rpc, args);
+      });
+    } else {
+      this._rpc.call.apply(this._rpc, args);
+    }
   };
   Worker.prototype.register = function() {
     this._rpc.register.apply(this._rpc, arguments);
