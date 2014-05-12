@@ -9,6 +9,7 @@ function Scheduler(server, job) {
   this.job = job;
   this.server = server;
   this.pendingTasks = [];
+  this.toSchedule = [];
   this.job.On('join', function(peer) {
     this.OnAddPeer(peer);
     var pending = this.pendingTasks;
@@ -16,6 +17,11 @@ function Scheduler(server, job) {
     _.each(pending, function(task) {
       this.AssignTask(task);
     }, this);
+    if (this.toSchedule.length) {
+      var toSchedule = this.toSchedule;
+      this.toSchedule = [];
+      this.DriveTasks(toSchedule);
+    }
     // TODO: Steal work.
   }.bind(this));
   this.job.On('leave', function(peer) {
@@ -41,19 +47,31 @@ Scheduler.prototype = {
     }, this);
   },
   AssignTask: function(task) {
-    var minPeer = _.min(_.rest(this.job.volunteers), function(p) {
+    var peer = _.min(_.rest(this.job.volunteers), function(p) {
       return p.load;
     });
-    if (!minPeer) {
+    if (!peer) {
       this.pendingTasks.push(task);
       return;
     }
-    minPeer.load += task.size;
-    this.server.SendToPeer(minPeer, 'new_task', {
+    peer.load += task.size;
+    this.peersToTasks[peer.id].tasks.push(task);
+    var todo = {};
+    _.each(task.sinks, function(s) {
+      this.dataToPeers[s.id] = peer;
+      todo[s.id] = true;
+      // Reduce load.
+      this.server.blockManager.Get(this.job.id, s.id, function() {
+        delete todo[s.id];
+        if (_.size(todo) === 0) {
+          peer.load -= task.size;
+        }
+      });
+    }, this);
+    this.server.SendToPeer(peer, 'new_task', {
       sources: _.pluck(task.sources, "id"),
       sinks: _.pluck(task.sinks, "id")
     });
-    this.peersToTasks[minPeer.id].tasks.push(task);
   },
   AppendRDDs: function(rdds) {
     var that = this;
@@ -165,7 +183,18 @@ Scheduler.prototype = {
     return cuts;
   },
   DriveTasks: function(targets) {
+    var npeers = this.job.volunteers.length-1;
+    if (npeers < 1) {
+      Array.prototype.push.apply(this.toSchedule, targets);
+      return;
+    }
     var schedule = this.GetSchedule(targets, this.job.volunteers.length-1)
+    console.log(_.map(schedule, function(cut) {
+      return {
+        sources: _.pluck(cut.sources, "id"),
+        sinks: _.pluck(cut.sinks, "id")
+      };
+    }));
     _.each(schedule, function(task) {
       this.AssignTask(task);
     }, this);
@@ -173,12 +202,14 @@ Scheduler.prototype = {
   GetSchedule: function(targets, n) {
     console.log("scheduling...", n, targets);
     var cuts = this.CutFor(targets);
+    /*
     console.log(_.map(cuts, function(cut) {
       return {
         sources: _.pluck(cut.sources, "id"),
         sinks: _.pluck(cut.sinks, "id")
       };
     }));
+    */
     var heap = new Heap(function(c) { return -c.size; });
     var sourceToCut = {};
     var sinkToCut = {};
@@ -201,9 +232,7 @@ Scheduler.prototype = {
       }
       minSourceCut.size += smallCut.size;
       // Dumb but should work.
-      console.log(_.pluck(minSourceCut.sources, "id"), _.pluck(smallCut.sources, "id"));
       minSourceCut.sources = _.union(minSourceCut.sources, smallCut.sources);
-      console.log(_.pluck(minSourceCut.sources, "id"))
       minSourceCut.sinks = _.union(minSourceCut.sinks, smallCut.sinks);
       minSourceCut.sources = _.difference(minSourceCut.sources, minSourceCut.sinks);
       heap.updateItem(minSourceCut);
