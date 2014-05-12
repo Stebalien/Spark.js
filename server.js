@@ -71,6 +71,7 @@ var server = {
     this.app.io.route(name, function(req) {
       if (!this.Preprocess(req)) {
         req.io.respond('error');
+        return;
       }
       callback(req);
     }.bind(this));
@@ -141,6 +142,10 @@ var server = {
   },
 
   CreatePingData: function(peer) {
+    if (!peer) {
+      return {};
+    }
+
     return {
       jobID: peer.jobID
     };
@@ -258,10 +263,10 @@ var server = {
     }.bind(this));
 
     this.ioroute('report_message', function(req){
-      var jobID = req.data.jobID;
+      //var jobID = req.data.jobID;
 
-      var master = this.GetMaster(jobID).socket;
-      this.SendToPeer(master, req.sessionID, 'report_message', req.data);
+      //var master = this.GetMaster(jobID).socket;
+      //this.SendToPeer(master, req.sessionID, 'report_message', req.data);
     }.bind(this));
 
     this.ioroute('disconnect', function(req) {
