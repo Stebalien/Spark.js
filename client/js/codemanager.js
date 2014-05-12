@@ -18,14 +18,12 @@ define(['underscore', "util"], function(_, util) {
       if (!waiting) {
         waiting = this.waiting[id] = [];
         var message = {
-          jobID: this.peer.jobID,
           minId: this.nextToGet,
           maxId: id
         };
         this.nextToGet = id+1;
 
         this.peer.Call('codelog:get', message, function(entries) {
-          console.log("hi");
           _.each(entries, function(entry) {
             this.code[entry.id] = entry.value;
           }, this);

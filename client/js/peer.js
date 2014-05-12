@@ -269,6 +269,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       }
       this.socket.emit('volunteer', data, function(peerJobID) {
         this.peerJobID = peerJobID;
+        this.Emit('added_to_job');
       }.bind(this));
       this.Emit('volunteer');
     },

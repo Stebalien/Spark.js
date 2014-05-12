@@ -92,7 +92,6 @@ var server = {
       return false;
     }
 
-    console.log(req.data);
     // Only the master knows this ID
     var masterID = req.data.masterID;
     if (masterID) {
@@ -241,9 +240,7 @@ var server = {
     }.bind(this));
 
     this.ioroute('leave_job', function(req) {
-      var jobID = req.data.jobID;
-      req.io.leave(jobID);
-      this.jobs[jobID].RemovePeer(this.GetPeer(req.sessionID));
+      req.job.RemovePeer(req.peer);
     }.bind(this));
 
     this.ioroute('ping', function(req) {

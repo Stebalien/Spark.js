@@ -37,8 +37,6 @@ function(_,             $      ,  Console,  CodeManager, SparkWorker ,   util,  
   var codemanager = new CodeManager(peer, w);
   peer.On("connected", function(){
     peer.On("new_task", function(task) {
-      console.log('on');
-      debugger;
       codemanager.ApplyUpdate(task.id, function() {
         w.call("schedule", task);
         console.log('after');

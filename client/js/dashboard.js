@@ -23,8 +23,6 @@ define(["peer", "blockmanager", "jquery", "bootstrap", "underscore"], function(P
           .prop('disabled', false)
           .button('reset');
 
-      $('.peer-list').addClass('hidden');
-
       $('#disconnect_button')
         .prop('disabled', true);
       });
@@ -33,8 +31,6 @@ define(["peer", "blockmanager", "jquery", "bootstrap", "underscore"], function(P
         $('#volunteer_button')
           .prop('disabled', true)
           .text('Connected');
-
-        $('.peer-list').removeClass('hidden');
 
         $('#disconnect_button')
           .prop('disabled', false);

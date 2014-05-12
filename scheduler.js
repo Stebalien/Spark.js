@@ -37,15 +37,17 @@ Scheduler.prototype = {
       load: 0
     };
   },
+
   UpdateCodeVersion: function(id) {
     if (id > this.latestId) {
       this.latestId = id;
     }
   },
+
   OnRemovePeer: function(peer) {
     var tasks = this.peersToTasks[peer.id];
     delete this.peersToTasks[peer.id];
-    _.each(function(task) {
+    _.each(tasks, function(task) {
       _.each(task.sinks, function(sink) {
         delete this.dataToPeers[sink.id];
       }, this);
