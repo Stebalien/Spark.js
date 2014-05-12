@@ -339,26 +339,12 @@ var server = {
     });
 
     this.ioroute('submit_task', function(req) {
-      console.log('a');
-      //if (checkMaster(req)) {
-        console.log('b');
-        var scheduler = this.GetScheduler(req.job.id);
+      if (req.peer.IsMaster()) {
+        var scheduler = req.job.scheduler;
         scheduler.AppendRDDs(req.data.rdds);
-        var cuts = scheduler.CutFor(req.data.targets);
-        var peer = req.job.GetPeers()[1];
-        _.each(cuts, function(cut) {
-          this.SendToPeer(peer, 'new_task', {
-            id: req.data.id,
-            sources: _.pluck(cut.sources, "id"),
-            sinks: _.pluck(cut.sinks, "id")
-          });
-        }, this);
-      //}
+        scheduler.DriveTasks(req.data.targets);
+      }
     }.bind(this));
-  },
-
-  GetScheduler: function(jobID) {
-    return (this.schedulers[jobID] || (this.schedulers[jobID] = new Scheduler()));
   },
 
   Broadcast: function(room, type, data) {
@@ -460,6 +446,9 @@ function Peer(jobID, isMaster) {
   this.jobID = jobID;
   this.socket = null;
   this.isMaster = isMaster;
+  this.tasks = [];
+  this.load = 0;
+  this.dead = false;
   this.UpdatePingTime();
 }
 
@@ -480,13 +469,34 @@ function Job(server) {
   this.master = new Peer(this.id, true);
   this.volunteers = [this.master];
   this.codeLog = server.codeLog.CreateForJob(this.id);
+  this.eventHandlers = {};
+
+  this.scheduler = new Scheduler(server, this);
 }
 
 Job.prototype = {
   AddPeer: function() {
     var peer = new Peer(this.id, false);
     this.volunteers.push(peer);
+    this.Emit('join', peer);
     return peer;
+  },
+
+  On: function(type, handler) {
+    if (!(type in this.eventHandlers)) {
+      this.eventHandlers[type] = [];
+    }
+    this.eventHandlers[type].push(handler);
+  },
+
+  Emit: function(type, data) {
+    if (!(type in this.eventHandlers)) {
+      return;
+    }
+
+    for (var i = 0; i < this.eventHandlers[type].length; i++) {
+      this.eventHandlers[type][i](data);
+    }
   },
 
   ReplaceMaster: function() {
@@ -503,9 +513,11 @@ Job.prototype = {
   },
 
   RemovePeer: function(peer) {
+    peer.dead = true;
     this.volunteers = this.volunteers.filter(function(jobPeer) {
       return peer.id != jobPeer.id;
     });
+    this.Emit('leave', peer);
   },
 
   GetPeers: function() {

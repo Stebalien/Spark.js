@@ -89,8 +89,6 @@ JobCodeLog.prototype = {
 
   GetInRange: function(minId, maxId, callback) {
     var maxSeq = this.results[maxId];
-    console.log(this.results);
-    console.log(minId, maxId);
     // Some seq entries are missing
     if (maxSeq === undefined || maxSeq > this.minSeq) {
       if (!(maxId in this.pendingGets)) {
@@ -102,7 +100,6 @@ JobCodeLog.prototype = {
       });
       return;
     }
-    console.log("Callback");
     callback(this._getValuesInRange(minId, maxId));
   },
 
