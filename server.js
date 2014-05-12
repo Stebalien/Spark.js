@@ -22,20 +22,6 @@ var server = {
   jobsByPeerID: {},
   socketIDToPeer: {},
 
-  //AddNewPeer: function(sessionID, jobID, socket, isMaster) {
-    //var peer = new Peer(sessionID, jobID, socket, isMaster);
-    //this.peers[sessionID] = peer;
-    //this.sockets[socket.id] = socket;
-    //if (jobID in this.jobs) {
-      //if (isMaster) {
-        //this.jobs[jobID].AddMaster(peer);
-      //} else {
-        //this.jobs[jobID].AddPeer(peer);
-      //}
-    //}
-    //return peer;
-  //},
-
   CreateJob: function() {
     var job = new Job(this);
     this.jobsByMasterID[job.id] = job;
