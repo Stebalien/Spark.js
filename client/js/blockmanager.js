@@ -73,8 +73,10 @@ define([], function() {
       // TODO: replicate
     }
 
-    for (var i = 0; i < this.pendingGets[id].length; i++) {
-      this.pendingGets[id][i](value);
+    if (this.pendingGets[id]) {
+      for (var i = 0; i < this.pendingGets[id].length; i++) {
+        this.pendingGets[id][i](value);
+      }
     }
 
     this.pendingGets[id] = [];
