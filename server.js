@@ -207,6 +207,7 @@ var server = {
       // Master is reconnecting
       if (job) {
         job.ReplaceMaster(); 
+        this.Broadcast(req.io.room(job.id), 'new_peer', {socketID: req.socket.id});
       } else {
         job = this.CreateJob();
       }
@@ -484,6 +485,13 @@ Job.prototype = {
     for (var i = 0; i < this.eventHandlers[type].length; i++) {
       this.eventHandlers[type][i](data);
     }
+  },
+
+  GetAllButMaster: function() {
+    var peers = _.reject(this.volunteers, function(peer) {
+      return peer.isMaster;
+    });
+    return peers;
   },
 
   ReplaceMaster: function() {

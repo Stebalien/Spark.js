@@ -10,7 +10,8 @@ define(["peer", "blockmanager", "jquery", "bootstrap", "underscore"], function(P
       var peer = this.peer;
 
       var me = this;
-      peer.On('new_peer', function(socketID) {
+      peer.On('ondatachannel', function(sockets) {
+        var socketID = sockets.remoteSocketID;
         var row = $('<tr></tr>');
         var peerIDCol = $('<td></td>');
         var socketIDCol = $('<td></td>');

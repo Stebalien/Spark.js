@@ -354,7 +354,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
           });
         }
       } else if (this.connections[socketID].ChannelOpened()) {
-        callback();
+        callback && callback();
       }
     },
 
@@ -470,6 +470,10 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       this.channel.onopen = function() {
         this.channelOpened = true;
         //this.SendMessage({type: 'get', id: 1, jobID: 1});
+        this.localPeer.Emit('ondatachannel', {
+          localSocketID: this.localSocketID,
+          remoteSocketID: this.remoteSocketID
+        });
       }.bind(this);
     },
 
