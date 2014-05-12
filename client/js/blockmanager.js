@@ -47,10 +47,8 @@ define([], function() {
     };
 
     // Don't know where it is; ask the server
-    this.peer.Call('blockmanager:get', message, function(socketIDs) {
-      for (var socketID in socketIDs) {
-        this.GetFromPeer(id, socketID);
-      }
+    this.peer.Call('blockmanager-get', message, function(socketID) {
+      this.GetFromPeer(id, socketID);
     }.bind(this));
   };
 
@@ -81,10 +79,9 @@ define([], function() {
     this.pendingGets[id] = [];
 
     var message = {
-      id: id,
-      jobID: this.peer.jobID
+      id: id
     };
-    this.peer.socket.emit('blockmanager:put', message);
+    this.peer.Call('blockmanager-put', message);
   };
 
   BlockManager.prototype.Delete = function(id) {

@@ -305,19 +305,19 @@ var server = {
       req.io.respond(this.consoleLog.Replay(req.job.id));
     }.bind(this));
 
-    this.ioroute('blockmanager', {
-      'get': function(req) {
-        var id = req.data.id;
-        this.blockManager.Get(req.job.id, id, function(socketIDs) {
-          req.io.respond(socketIDs);
-        });
-      }.bind(this),
+    this.ioroute('blockmanager-get', function(req) {
+      console.log("get");
+      var id = req.data.id;
+      this.blockManager.Get(req.job.id, id, function(socketIDs) {
+        req.io.respond(socketIDs);
+      });
+    }.bind(this));
 
-      'put': function(req) {
-        var id = req.data.id;
-        this.blockManager.Put(req.job.id, id, req.peer.socket.id);
-      }.bind(this)
-    });
+    this.ioroute('blockmanager-put', function(req) {
+      console.log("put");
+      var id = req.data.id;
+      this.blockManager.Put(req.job.id, id, req.peer.socket.id);
+    }.bind(this));
 
     this.ioroute('codelog', {
       'get': function(req) {
