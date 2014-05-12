@@ -242,7 +242,7 @@ var server = {
 
     this.ioroute('leave_job', function(req) {
       req.job.RemovePeer(req.peer);
-      this.Emit('leave', peer);
+      this.Emit('leave', req.peer);
     }.bind(this));
 
     this.ioroute('ping', function(req) {
