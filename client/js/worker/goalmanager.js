@@ -9,7 +9,7 @@ define(["underscore", "worker/blockmanager", "worker/rddmanager"], function(_, B
        .map(function(sinkId) {
          var sink = RDDManager.getPartition(sinkId);
          if (!sink) throw new Error("WTF!");
-         sinks[sink] = true;
+         sinks[sinkId] = true;
          return sink;
        })
        .sortBy(function(sink) {
@@ -18,7 +18,7 @@ define(["underscore", "worker/blockmanager", "worker/rddmanager"], function(_, B
        }).each(function(sink) {
          sink.collect(taskContext, function(values) {
            // Check if canceled.
-           if (sinks[sink]) {
+           if (sinks[sink.id]) {
              BlockManager.Put(sink.id, values, sink.persistLevel||1);
            }
          });
