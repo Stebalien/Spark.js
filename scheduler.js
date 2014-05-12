@@ -8,6 +8,7 @@ function Scheduler(server, job) {
   this.dataToPeers = {};
   this.job = job;
   this.server = server;
+  this.latestId = -1;
   this.pendingTasks = [];
   this.toSchedule = [];
   this.job.On('join', function(peer) {
@@ -35,6 +36,11 @@ Scheduler.prototype = {
       tasks: [],
       load: 0
     };
+  },
+  UpdateCodeVersion: function(id) {
+    if (id > this.latestId) {
+      this.latestId = id;
+    }
   },
   OnRemovePeer: function(task) {
     var tasks = this.peersToTasks[peer.id];
@@ -70,7 +76,8 @@ Scheduler.prototype = {
     }, this);
     this.server.SendToPeer(peer, 'new_task', {
       sources: _.pluck(task.sources, "id"),
-      sinks: _.pluck(task.sinks, "id")
+      sinks: _.pluck(task.sinks, "id"),
+      id: this.latestId
     });
   },
   AppendRDDs: function(rdds) {

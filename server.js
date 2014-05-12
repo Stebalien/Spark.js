@@ -335,6 +335,7 @@ var server = {
     this.ioroute('submit_task', function(req) {
       if (req.peer.IsMaster()) {
         var scheduler = req.job.scheduler;
+        scheduler.UpdateCodeVersion(req.data.id);
         scheduler.AppendRDDs(req.data.rdds);
         scheduler.DriveTasks(req.data.targets);
       }
