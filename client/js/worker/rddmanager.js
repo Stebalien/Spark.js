@@ -1,6 +1,13 @@
 define(function() {
   var rddCache = []; // It's sparse anyways...
+  var idCounter = 0;
   var RDDManager = {
+    getNextId: function() {
+      return idCounter++;
+    },
+    skipIds: function(n) {
+      idCounter += n;
+    },
     getRDD: function(id) {
       return rddCache[id];
     },

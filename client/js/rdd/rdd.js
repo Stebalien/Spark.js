@@ -1,5 +1,4 @@
 define(["underscore", "util", "worker/task", "worker/rddmanager", "worker/goalmanager"], function(_, util, Task, RDDManager, GoalManager) {
-  var idCounter = 0;
 
   function setattr(obj, name, fn) {
     Object.defineProperty(obj, name, {
@@ -98,7 +97,7 @@ define(["underscore", "util", "worker/task", "worker/rddmanager", "worker/goalma
         RDDImpl.apply(rdd, arguments);
         return rdd;
       }
-      this.id = idCounter++; // Predictable, unique ID.
+      this.id = RDDManager.getNextId();
       RDDManager.registerRDD(this);
       this.__description__ = new RDDContext(arguments);
       this.__description__.__rdd__ = this;
@@ -179,7 +178,10 @@ define(["underscore", "util", "worker/task", "worker/rddmanager", "worker/goalma
     });
   } else {
     // Nop these on the client.
-    RDD.extend("_collect", function(callback) {});
+    RDD.extend("_collect", function(callback) {
+      // WE STILL NEED TO ALLOCAT THE ID!
+      RDDManager.skipIds(1);
+    });
   }
 
   var partitionCache = [];

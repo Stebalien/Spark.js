@@ -93,8 +93,16 @@ function(RDD, WorkerConsole, util, _) {
       });
     });
   } else {
-    RDD.extend("print", function() {});
-    RDD.extend("save", function() {});
+    // Track ids.
+    RDD.extend("plotLine", function() {
+      this._collect();
+    });
+    RDD.extend("print", function() {
+      this._collect();
+    });
+    RDD.extend("save", function() {
+      this._collect();
+    });
   }
 
   return RDD;
