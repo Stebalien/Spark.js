@@ -34,6 +34,7 @@ var server = {
   CreatePeer: function(job, socket) {
     var peer = job.AddPeer();
     this.ConnectPeerWithSocket(peer, socket);
+    this.Emit('join', peer);
     return peer;
   },
 
@@ -241,6 +242,7 @@ var server = {
 
     this.ioroute('leave_job', function(req) {
       req.job.RemovePeer(req.peer);
+      this.Emit('leave', peer);
     }.bind(this));
 
     this.ioroute('ping', function(req) {
@@ -282,6 +284,7 @@ var server = {
 
       for (var jobID in this.jobs) {
         this.jobs[jobID].RemovePeer(peer);
+        this.Emit('leave', peer);
       }
 
       delete this.peers[req.sessionID];
@@ -299,16 +302,16 @@ var server = {
     }.bind(this));
 
     this.ioroute('blockmanager-get', function(req) {
-      console.log("get");
       var id = req.data.id;
+      console.log("get", id);
       this.blockManager.Get(req.job.id, id, function(socketIDs) {
         req.io.respond(socketIDs);
       });
     }.bind(this));
 
     this.ioroute('blockmanager-put', function(req) {
-      console.log("put");
       var id = req.data.id;
+      console.log("put", id);
       this.blockManager.Put(req.job.id, id, req.peer.socket.id);
     }.bind(this));
 
@@ -463,7 +466,6 @@ Job.prototype = {
   AddPeer: function() {
     var peer = new Peer(this.id, false);
     this.volunteers.push(peer);
-    this.Emit('join', peer);
     return peer;
   },
 
@@ -502,7 +504,6 @@ Job.prototype = {
     this.volunteers = this.volunteers.filter(function(jobPeer) {
       return peer.id != jobPeer.id;
     });
-    this.Emit('leave', peer);
   },
 
   GetPeers: function() {
