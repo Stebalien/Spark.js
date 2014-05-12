@@ -129,7 +129,7 @@ Scheduler.prototype = {
       var sink = sinks.pop();
       if (assignments[sink.id]) continue; // assigned
       if (sink.reduced) {
-        var assigned = sink.children[0];
+        var assigned = assignments[sink.children[0].sink.id]; // There must be only 1.
         if (assigned) {
           assigned.sinks.push(sink);
           continue;
