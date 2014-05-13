@@ -35,19 +35,18 @@ function(_,             $      ,  Console,  CodeManager, SparkWorker ,   util,  
   });
   var w = new SparkWorker(peer, false); // Slave
   var codemanager = new CodeManager(peer, w);
-  peer.On("connected", function(){
-    peer.On("new_task", function(task) {
-      codemanager.ApplyUpdate(task.id, function() {
-        w.call("schedule", task);
-        console.log('after');
-      });
+  peer.On("new_task", function(task) {
+    console.log('Got Task');
+    codemanager.ApplyUpdate(task.id, function() {
+      console.log('updated');
+      w.call("schedule", task);
     });
-    peer.On("remove_sources", function(sources) {
-      //
-      w.call("remove_sources", sources);
-    });
-    peer.On("remove_sinks", function(sinks) {
-      // TODO: Garbage Collection
-    });
+  });
+  peer.On("remove_sources", function(sources) {
+    //
+    w.call("remove_sources", sources);
+  });
+  peer.On("remove_sinks", function(sinks) {
+    // TODO: Garbage Collection
   });
 });

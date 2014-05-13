@@ -45,7 +45,13 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       }
       data.masterID = this.masterID;
       data.peerJobID = this.peerJobID;
-      this.socket.emit(method, data, callback);
+      if (!data.peerJobID) {
+        this.Once("added_to_job", function() {
+          this.Call(method, data, callback);
+        }.bind(this));
+      } else {
+        this.socket.emit(method, data, callback);
+      }
     },
 
     CreatePeerConnectionForOfferer: function(socketID) {
@@ -130,10 +136,12 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         case 'icecandidate':
           this.OnIceCandidate(message);
           break;
-        case 'new_peer':
+        case 'peer_join':
           this.ConnectToPeer(message.socketID);
           //this.SendOffer(message);
-          this.Emit('new_peer', message.socketID);
+          break;
+        case 'peer_leave':
+          this.DisconnectFromPeer(message.socketID);
           break;
         case 'added_to_job':
           this.Emit('added_to_job', message);
@@ -339,6 +347,12 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       this.activeOnJob = false;
     },
 
+    DisconnectFromPeer: function(socketID) {
+      var peer = this.connections[socketID];
+      delete this.connections[socketID];
+      this.Emit('peer_leave', peer);
+    },
+
     ConnectToPeer: function(socketID, callback) {
       console.log(socketID);
       if (!this.connections[socketID]) {
@@ -370,32 +384,27 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     HandleMessageFromPeer: function(remoteSocketID, message) {
       switch (message.type) {
         case 'get':
-          this.blockManager.Get(message.id, function(value) {
-            this.SendMessageToPeer(remoteSocketID, {
-              seqID: message.seqID,
-              originalSender: message.senderSocketID,
-              type: 'put',
-              value: value,
-              id: message.id
-            });
-          }.bind(this));
+          var block = this.blockManager.localBlocks[message.id];
+          var value = block.value;
+          var replication = block.replication - 1;
+          if (block.replication > 1) {
+            block.replication--;
+          }
+          this.SendMessageToPeer(remoteSocketID, {
+            seqID: message.seqID,
+            originalSender: message.senderSocketID,
+            value: value,
+            type: 'put',
+            id: message.id,
+            replication: replication
+          });
           break;
         case 'put':
           this.blockManager.Put(message.id, message.value, message.replication);
           break;
         case 'delete':
+          // TODO: Server only!
           this.blockManager.Delete(message.id);
-          break;
-        case 'getnow':
-          this.blockManager.GetNow(message.id, function(value) {
-            this.SendMessageToPeer(remoteSocketID, {
-              seqID: message.seqID,
-              originalSender: message.senderSocketID,
-              type: 'put',
-              value: value,
-              id: message.id
-            });
-          }.bind(this));
           break;
       }
     }
@@ -440,14 +449,13 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       }
 
       this.connection.ondatachannel = function(event) {
-        this.localPeer.Emit('ondatachannel', {
-          localSocketID: this.localSocketID,
-          remoteSocketID: this.remoteSocketID
-        });
 
         this.channel = event.channel;
         this.channelOpened = true;
         this.channel.onmessage = this.HandleIncomingMessage.bind(this);
+
+        this.localPeer.Emit('peer_join', this);
+        console.log('here');
       }.bind(this);
     },
 
@@ -470,10 +478,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
       this.channel.onopen = function() {
         this.channelOpened = true;
         //this.SendMessage({type: 'get', id: 1, jobID: 1});
-        this.localPeer.Emit('ondatachannel', {
-          localSocketID: this.localSocketID,
-          remoteSocketID: this.remoteSocketID
-        });
+        this.localPeer.Emit('peer_join', this);
       }.bind(this);
     },
 

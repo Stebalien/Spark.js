@@ -7,9 +7,10 @@ define([], function() {
     this.pendingGets = {};
   }
 
+  /*
   BlockManager.prototype.GetNow = function(id, callback) {
     if (id in this.localBlocks) {
-      callback(this.localBlocks[id]);
+      callback(this.localBlocks[id].value);
       return;
     }
 
@@ -18,70 +19,87 @@ define([], function() {
     }
     this.pendingGets[id].push(callback);
 
-    if (id in this.remoteBlockSocketIDs) {
-      this.GetFromPeer(id, this.remoteBlockSocketIDs[id], true);
-      return;
-    }
-    callback(null);
-  };
-
-  BlockManager.prototype.Get = function(id, callback) {
-    // Cached locally
-    if (id in this.localBlocks) {
-      callback(this.localBlocks[id]);
-    }
-
-    if (!(id in this.pendingGets)) {
-      this.pendingGets[id] = [];
-    }
-    this.pendingGets[id].push(callback);
-
-    // Fetch from another peer
     if (id in this.remoteBlockSocketIDs) {
       this.GetFromPeer(id, this.remoteBlockSocketIDs[id]);
       return;
     }
-
-    var message = {
-      id: id
-    };
-
-    // Don't know where it is; ask the server
-    this.peer.Call('blockmanager-get', message, function(socketID) {
-      this.GetFromPeer(id, socketID);
-    }.bind(this));
+    callback(null);
   };
+  */
 
-  BlockManager.prototype.GetFromPeer = function(id, socketID, getNow) {
+  BlockManager.prototype.Get = function(id, callback) {
+    // Cached locally
+    if (id in this.localBlocks) {
+      callback(this.localBlocks[id].value);
+    }
+
+    if (id in this.pendingGets) {
+      this.pendingGets[id].push(callback);
+      return;
+    }
+
+    this.pendingGets[id] = [callback];
+    this._doGet(id);
+  };
+  BlockManager.prototype._doGet = function(id) {
+    var socketIDs = this.remoteBlockSocketIDs[id];
+    if (!socketIDs || socketIDs.length === 0) {
+      this.peer.Call('blockmanager-get', {id: id}, function(socketIDs) {
+        this.remoteBlockSocketIDs[id] = socketIDs;
+        if (!(id in this.pendingGets)) {
+          // We actually have it now
+          return;
+        }
+        this._doGet(id);
+      }.bind(this));
+    } else {
+      var socketID = socketIDs[_.random(0, socketIDs.length-1)];
+      this.GetFromPeer(id, socketID);
+      _.delay(function() {
+        if (!(id in this.pendingGets)) {
+          return;
+        }
+        var i = this.remoteBlockSocketIDs[id].indexOf(socketID);
+        if (i >= 0) {
+          // Remove from peers.
+          this.remoteBlockSocketIDs[id].splice(i, 1);
+        }
+        this._doGet(id);
+      }.bind(this), 1000); // timeout
+    }
+  }
+
+  BlockManager.prototype.GetFromPeer = function(id, socketID, cb) {
     this.peer.SendMessageToPeer(socketID, {
-      type: getNow ? 'getnow' : 'get',
+      type: 'get',
       id: id
-    });
+    }, cb);
   };
 
   BlockManager.prototype.Put = function(id, value, replication) {
     // If doing a put after fetching from another peer, should possibly notify 
     // server that this peer has this block
-    if (value) {
-      this.localBlocks[id] = value;
+    if (value && replication > 0) {
+      if (this.localBlocks[id]) {
+        replication += this.localBlocks[id].replication;
+      }
+      this.localBlocks[id] = {
+        value: value,
+        replication: replication
+      };
+      var message = {
+        id: id
+      };
+      this.peer.Call('blockmanager-put', message);
     }
 
-    if (replication && replication > 1) {
-      // TODO: replicate
-    }
-
-    if (this.pendingGets[id]) {
+    if (id in this.pendingGets) {
       for (var i = 0; i < this.pendingGets[id].length; i++) {
         this.pendingGets[id][i](value);
       }
     }
 
-    this.pendingGets[id] = [];
-
-    var message = {
-      id: id
-    };
-    this.peer.Call('blockmanager-put', message);
+    delete this.pendingGets[id];
   };
 
   BlockManager.prototype.Delete = function(id) {

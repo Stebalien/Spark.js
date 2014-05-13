@@ -8,7 +8,6 @@ var crypto = require('crypto');
 var CodeLog = require('./codelog.js');
 
 var server = {
-  peers: {},
   jobs: {},
   peerJobs: {},
   sockets: {},
@@ -26,7 +25,7 @@ var server = {
     var job = new Job(this);
     this.jobsByMasterID[job.id] = job;
     this.jobsByPeerID[job.peerJobID] = job;
-    this.blockManager.CreateJob(job.id);
+    this.blockManager.CreateJob(job);
     this.codeLog.CreateForJob(job.id);
     return job;
   },
@@ -154,18 +153,8 @@ var server = {
     };
   },
 
-  GetPeer: function(sessionID) {
-    return this.peers[sessionID];
-  },
-
   GetSocket: function(socketID) {
     return this.sockets[socketID];
-  },
-
-  HandlePing: function(sessionID) {
-    if (this.peers[sessionID]) {
-      this.peers[sessionID].UpdatePingTime();
-    }
   },
 
   Init: function() {
@@ -184,6 +173,12 @@ var server = {
     });
 
     this.app.io.sockets.on('connection', function(socket, data) {
+      socket.on('disconnect', function() {
+        var peer = this.GetPeerFromSocketID(socket.id);
+        if (peer) {
+          this.OnPeerDisconnect(peer);
+        }
+      }.bind(this));
       this.sockets[socket.id] = socket;
       this.SendReliable(socket, {type: 'connected', socketID: socket.id});
     }.bind(this));
@@ -207,7 +202,7 @@ var server = {
       // Master is reconnecting
       if (job) {
         job.ReplaceMaster(); 
-        this.Broadcast(req.io.room(job.id), 'new_peer', {socketID: req.socket.id});
+        this.Broadcast(req.io.room(job.id), 'peer_join', {socketID: req.socket.id});
       } else {
         job = this.CreateJob();
       }
@@ -238,17 +233,18 @@ var server = {
 
       var data = {jobID: job.id};
       req.io.join(job.id);
-      this.Broadcast(req.io.room(job.id), 'new_peer', {socketID: req.socket.id});
+      this.Broadcast(req.io.room(job.id), 'peer_join', {socketID: req.socket.id});
     }.bind(this));
 
     this.ioroute('leave_job', function(req) {
       req.job.RemovePeer(req.peer);
+      this.Broadcast(req.io.room(req.job.id), 'peer_leave', {socketID: req.socket.id});
       req.job.Emit('leave', req.peer);
     }.bind(this));
 
     this.ioroute('ping', function(req) {
-      //server.HandlePing(req.sessionID);
       var peer = req.peer;
+      // peer.UpdatePingTime();
       this.SendToPeer(peer, 'ping', this.CreatePingData(peer));
     }.bind(this));
 
@@ -257,7 +253,9 @@ var server = {
       var description = req.data.description;
 
       var peer = this.GetPeerFromSocketID(sockets.answererSocketID);
-      this.SendToPeer(peer, 'offer', req.data);
+      if (peer) {
+        this.SendToPeer(peer, 'offer', req.data);
+      }
     }.bind(this));
 
     this.ioroute('answer', function(req) {
@@ -265,7 +263,9 @@ var server = {
       var description = req.data.description;
 
       var peer = this.GetPeerFromSocketID(sockets.offererSocketID);
-      this.SendToPeer(peer, 'answer', req.data);
+      if (peer) {
+        this.SendToPeer(peer, 'answer', req.data);
+      }
     }.bind(this));
 
     this.ioroute('icecandidate', function(req) {
@@ -273,23 +273,9 @@ var server = {
       var candidate = req.data.candidate;
 
       var peer = this.GetPeerFromSocketID(sockets.answererSocketID);
-      this.SendToPeer(peer, 'icecandidate', req.data);
-    }.bind(this));
-
-    this.ioroute('disconnect', function(req) {
-      var peer = this.GetPeer(req.sessionID);
-
-      if (!peer) {
-        return;
+      if (peer) {
+        this.SendToPeer(peer, 'icecandidate', req.data);
       }
-
-      for (var jobID in this.jobs) {
-        this.jobs[jobID].RemovePeer(peer);
-        req.job.Emit('leave', peer);
-      }
-
-      delete this.peers[req.sessionID];
-      delete this.sockets[peer.socketID];
     }.bind(this));
 
     this.iomasterroute('consolelogrecord', function(req) {
@@ -321,19 +307,30 @@ var server = {
         var minId = req.data.minId;
         var maxId = req.data.maxId;
         this.GetFromCodeLog(req.job.id, minId, maxId, function(entries) {
+          console.log('reply');
           req.io.respond(entries);
         }.bind(this));
       }.bind(this)
     });
 
-    this.ioroute('submit_task', function(req) {
-      if (req.peer.IsMaster()) {
-        var scheduler = req.job.scheduler;
-        scheduler.UpdateCodeVersion(req.data.id);
-        scheduler.AppendRDDs(req.data.rdds);
-        scheduler.DriveTasks(req.data.targets);
-      }
+    this.iomasterroute('submit_task', function(req) {
+      var scheduler = req.job.scheduler;
+      scheduler.UpdateCodeVersion(req.data.id);
+      scheduler.AppendRDDs(req.data.rdds);
+      scheduler.DriveTasks(req.data.targets);
     }.bind(this));
+  },
+
+  OnPeerDisconnect: function(peer) {
+    if (peer.jobID) {
+      var job = this.GetJobByMasterID(peer.jobID);
+      if (job) {
+        job.RemovePeer(peer);
+        this.Broadcast(this.app.io.room(job.id), 'peer_leave', {socketID: peer.socket.id});
+        job.Emit('leave', peer);
+      }
+    }
+    delete this.sockets[peer.socketID];
   },
 
   Broadcast: function(room, type, data) {

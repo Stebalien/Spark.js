@@ -1,9 +1,20 @@
 var _ = require('underscore');
 
-function JobBlockManager(jobID) {
-  this.jobID = jobID;
+function JobBlockManager(job) {
+  this.job = job;
   this.blocks = {};
   this.pendingGets = {};
+  this.job.On("leave", function(peer) {
+    _.each(this.blocks, function(peers, id) {
+      this.blocks[id] = _.without(peers, peer.socket.id)
+      var newPeers = _.without(peers, peer.socket.id);
+      if (newPeers.length !== 0) {
+        this.blocks[id] = newPeers;
+      } else {
+        delete this.blocks[id];
+      }
+    }, this);
+  }.bind(this));
 }
 
 JobBlockManager.prototype = {
@@ -32,12 +43,12 @@ JobBlockManager.prototype = {
   // partitionID is being worked on by peer with socketID
   Put: function(partitionID, socketID, replication) {
     if (!(partitionID in this.blocks)) {
-      this.blocks[partitionID] = socketID;
+      this.blocks[partitionID] = [];
     }
-    this.blocks[partitionID][socketID] = true;
+    this.blocks[partitionID].push(socketID);
 
     if (replication && replication > 1) {
-      replication -= _.size(this.blocks[partitionID]);
+      replication -= this.blocks[partitionID].length;
 
       if (replication > 1) {
         // TODO: replicate
@@ -46,7 +57,7 @@ JobBlockManager.prototype = {
 
     if (partitionID in this.pendingGets) {
       for (var i = 0; i < this.pendingGets[partitionID].length; i++) {
-        this.pendingGets[partitionID][i](socketID);
+        this.pendingGets[partitionID][i](this.blocks[partitionID]);
       }
     }
 
@@ -67,8 +78,8 @@ BlockManager.prototype = {
     return jobID in this.jobBlockManagers;
   },
 
-  CreateJob: function(jobID) {
-    this.jobBlockManagers[jobID] = new JobBlockManager(jobID);
+  CreateJob: function(job) {
+    this.jobBlockManagers[job.id] = new JobBlockManager(job);
   },
 
   Get: function(jobID, partitionID, callback) {

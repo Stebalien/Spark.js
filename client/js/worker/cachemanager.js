@@ -10,7 +10,8 @@ define(["worker/blockmanager"], function(BlockManager) {
               values.push(item);
             },
             done: function() {
-              BlockManager.Put(partition.id, values, partition.persistLevel);
+              // persist locally
+              BlockManager.Put(partition.id, values, partition.persistLevel || 1);
               _.each(values, function(item) {
                 processor.process(item);
               });

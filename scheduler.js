@@ -65,10 +65,16 @@ Scheduler.prototype = {
       _.each(task.sinks, function(sink) {
         delete this.dataToPeers[sink.id];
       }, this);
+      console.log('reassign', task);
       this.AssignTask(task);
     }, this);
   },
   AssignTask: function(task) {
+    if (this.job.volunteers.length < 2) {
+      this.pendingTasks.push(task);
+      return;
+    }
+
     var peer = _.min(_.rest(this.job.volunteers), function(p) {
       return p.load;
     });
@@ -90,6 +96,7 @@ Scheduler.prototype = {
         }
       });
     }, this);
+    console.log("Assign Task:", peer.id);
     this.server.SendToPeer(peer, 'new_task', {
       sources: _.pluck(task.sources, "id"),
       sinks: _.pluck(task.sinks, "id"),
