@@ -1,3 +1,4 @@
+"use strict";
 define(['blockmanager', 'underscore'], function(BlockManager, _) {
 
   var PING_INTERVAL = 1000;

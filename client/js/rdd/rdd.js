@@ -1,3 +1,4 @@
+"use strict";
 define(["underscore", "util", "worker/task", "worker/rddmanager", "worker/goalmanager"], function(_, util, Task, RDDManager, GoalManager) {
 
   function setattr(obj, name, fn) {

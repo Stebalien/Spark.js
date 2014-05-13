@@ -1,3 +1,4 @@
+"use strict";
 define(["underscore", "worker/blockmanager", "worker/rddmanager"], function(_, BlockManager, RDDManager) {
   var waiting = {};
   var sinks = {};

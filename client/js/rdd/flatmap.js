@@ -1,3 +1,4 @@
+"use strict";
 define(["rdd/rdd", "underscore"], function(RDD, _) {
   // TODO: one to many?
   var FlatMapRDD = RDD.implement({

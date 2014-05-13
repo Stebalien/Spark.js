@@ -1,3 +1,4 @@
+"use strict";
 define(['underscore', "util"], function(_, util) {
   function CodeManager(peer, worker) {
     this.peer = peer;

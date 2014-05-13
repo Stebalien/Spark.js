@@ -1,3 +1,4 @@
+"use strict";
 define(["rdd/rdd", "underscore"], function(RDD, _) {
   var MappedRDD = RDD.implement({
     init: function(parent, fn) {

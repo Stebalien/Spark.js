@@ -1,3 +1,4 @@
+"use strict";
 define(["worker"], function(Worker) {
   function SparkWorker(peer, isMaster) {
     Worker.prototype.constructor.call(this, isMaster ? "/js/master_worker.js" : "/js/slave_worker.js");

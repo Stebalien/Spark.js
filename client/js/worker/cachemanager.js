@@ -1,3 +1,4 @@
+"use strict";
 define(["worker/blockmanager"], function(BlockManager) {
   var CacheManager = {
     getOrCompute: function(taskContext, partition, processor) {

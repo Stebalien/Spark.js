@@ -1,3 +1,4 @@
+"use strict";
 importScripts("/js/lib/require.js");
 importScripts("/js/lib/underscore.js");
 importScripts("require.config-worker.js");

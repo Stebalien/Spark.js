@@ -1,3 +1,4 @@
+"use strict";
 define(["underscore"], function(_) {
   function RPC(port) {
     var that = this;

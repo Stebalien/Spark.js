@@ -1,3 +1,4 @@
+"use strict";
 define(["peer", "blockmanager", "jquery", "bootstrap", "underscore"], function(Peer, BlockManager, $, Bootstrap, _, console) {
   function Dashboard(peer) {
     this.peer = peer;

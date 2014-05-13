@@ -1,3 +1,4 @@
+"use strict";
 define(["underscore", "worker/rpc", "worker/rddmanager"], function(_, rpc, RDDManager) {
   var nextTaskId = 0;
   var nextRDD = 0;

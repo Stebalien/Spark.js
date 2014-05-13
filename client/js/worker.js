@@ -1,3 +1,4 @@
+"use strict";
 define(["underscore", "rpc", "port"],
 function(_,             RPC,   Port) {
   function Worker(url) {

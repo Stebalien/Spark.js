@@ -1,3 +1,4 @@
+"use strict";
 // TODO: Split into separate file.
 require.config({
   shim: {

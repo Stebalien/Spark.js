@@ -1,3 +1,4 @@
+"use strict";
 define(["underscore", "worker/rpc"], function(_, rpc) {
   return function Stub(desc) {
     var that = this;

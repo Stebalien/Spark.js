@@ -1,3 +1,4 @@
+"use strict";
 // TODO: Sign up as master (not slave)
 define(function() {
   function MasterTaskManager(peer) {

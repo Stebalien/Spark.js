@@ -1,3 +1,4 @@
+"use strict";
 define(["rdd/rdd", "underscore"], function(RDD, _) {
   var FilteredRDD = RDD.implement({
     init: function(parent, fn) {

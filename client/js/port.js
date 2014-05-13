@@ -1,3 +1,4 @@
+"use strict";
 define(["EventEmitter"], function(EventEmitter) {
   function Port(worker) {
     var that = this;

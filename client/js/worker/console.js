@@ -1,3 +1,4 @@
+"use strict";
 define(["worker/stub"], function(Stub) {
   return new Stub({
     "promiseResult": "console/promiseResult",
