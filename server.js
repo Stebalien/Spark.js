@@ -290,7 +290,7 @@ var server = {
 
     this.ioroute('blockmanager-get', function(req) {
       var id = req.data.id;
-      console.log("get", id);
+      //console.log("get", id);
       this.blockManager.Get(req.job.id, id, function(socketIDs) {
         req.io.respond(socketIDs);
       });
@@ -298,7 +298,7 @@ var server = {
 
     this.ioroute('blockmanager-put', function(req) {
       var id = req.data.id;
-      console.log("put", id);
+      //console.log("put", id);
       this.blockManager.Put(req.job.id, id, req.peer.socket.id);
     }.bind(this));
 
@@ -307,7 +307,7 @@ var server = {
         var minId = req.data.minId;
         var maxId = req.data.maxId;
         this.GetFromCodeLog(req.job.id, minId, maxId, function(entries) {
-          console.log('reply');
+          //console.log('reply');
           req.io.respond(entries);
         }.bind(this));
       }.bind(this)

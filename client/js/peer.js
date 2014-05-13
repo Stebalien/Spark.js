@@ -354,7 +354,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
     },
 
     ConnectToPeer: function(socketID, callback) {
-      console.log(socketID);
+      //console.log(socketID);
       if (!this.connections[socketID]) {
         this.SendOffer(socketID);
 
@@ -455,7 +455,7 @@ define(['blockmanager', 'underscore'], function(BlockManager, _) {
         this.channel.onmessage = this.HandleIncomingMessage.bind(this);
 
         this.localPeer.Emit('peer_join', this);
-        console.log('here');
+        //console.log('here');
       }.bind(this);
     },
 

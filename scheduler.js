@@ -65,7 +65,6 @@ Scheduler.prototype = {
       _.each(task.sinks, function(sink) {
         delete this.dataToPeers[sink.id];
       }, this);
-      console.log('reassign', task);
       this.AssignTask(task);
     }, this);
   },
@@ -96,7 +95,6 @@ Scheduler.prototype = {
         }
       });
     }, this);
-    console.log("Assign Task:", peer.id);
     this.server.SendToPeer(peer, 'new_task', {
       sources: _.pluck(task.sources, "id"),
       sinks: _.pluck(task.sinks, "id"),
@@ -214,18 +212,20 @@ Scheduler.prototype = {
       return;
     }
     var schedule = this.GetSchedule(targets, this.job.volunteers.length-1)
+    /*
     console.log(_.map(schedule, function(cut) {
       return {
         sources: _.pluck(cut.sources, "id"),
         sinks: _.pluck(cut.sinks, "id")
       };
     }));
+    */
     _.each(schedule, function(task) {
       this.AssignTask(task);
     }, this);
   },
   GetSchedule: function(targets, n) {
-    console.log("scheduling...", n, targets);
+    //console.log("scheduling...", n, targets);
     var cuts = this.CutFor(targets);
     var heap = new Heap(function(c) { return -c.size; });
     var sourceToCut = {};

@@ -36,9 +36,9 @@ function(_,             $      ,  Console,  CodeManager, SparkWorker ,   util,  
   var w = new SparkWorker(peer, false); // Slave
   var codemanager = new CodeManager(peer, w);
   peer.On("new_task", function(task) {
-    console.log('Got Task');
+    //console.log('Got Task');
     codemanager.ApplyUpdate(task.id, function() {
-      console.log('updated');
+      //console.log('updated');
       w.call("schedule", task);
     });
   });

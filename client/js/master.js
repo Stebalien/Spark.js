@@ -46,7 +46,7 @@ function(_,             $      ,  Console,   SparkWorker ,   util,   MasterTaskM
         $(".loaded").css("visibility", "visible");
         var worker = new SparkWorker(peer, true);
         _.each(_.sortBy(logItems, "seq"), function(item) {
-          console.log(item);
+          //console.log(item);
           if (item.type === "code") {
               worker.call("exec", util.toURL(item.value));
           }
