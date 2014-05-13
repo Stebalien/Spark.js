@@ -32,10 +32,9 @@ define(["underscore", "worker/rpc", "worker/rddmanager"], function(_, rpc, RDDMa
     if (this.submitted) return;
     this.submitted = true;
 
-    var targets = [];
-    Array.prototype.push.apply(targets, _.flatten(_.map(this.rdd.partitions, getTargets)));
+    var targets = _.flatten(_.map(this.rdd.partitions, getTargets));
     if (!this.rdd.persistLevel) {
-      Array.prototype.push.apply(targets, _.pluck(this.rdd.partitions, "id"));
+      targets = targets.concat(_.pluck(this.rdd.partitions, "id"));
     }
     var rdds = [];
     var rdd;
